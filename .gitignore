@@ -1,0 +1,11 @@
+# Dati degli atleti: non vanno MAI pubblicati
+atleti.json
+sessioni/
+foto/
+report/
+backup/
+*.backup.html
+
+# File locali
+.DS_Store
+.claude/
