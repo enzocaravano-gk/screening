@@ -780,9 +780,10 @@
         .angle-pt.vertex { background: rgba(255,214,0,0.55); }
         .angle-pt.dragging { cursor: grabbing; transform: scale(1.35); }
         @media (pointer: coarse) { .angle-pt { width: 26px; height: 26px; margin: -13px 0 0 -13px; } }
-        .angle-label { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 2px; background: rgba(7,9,15,0.85); color: #ffd600; font: 700 0.72rem var(--font-mono); padding: 2px 3px 2px 7px; border-radius: 6px; border: 1px solid rgba(255,214,0,0.5); pointer-events: all; white-space: nowrap; z-index: 3; }
+        .angle-label { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 1px; background: rgba(7,9,15,0.8); color: #ffd600; font: 700 0.6rem/1.2 var(--font-mono); padding: 1px 1px 1px 5px; border-radius: 5px; border: 1px solid rgba(255,214,0,0.4); pointer-events: all; white-space: nowrap; z-index: 1; }
         .angle-label span { cursor: text; }
-        .angle-del { background: none; border: none; color: #ff6b81; cursor: pointer; font-size: 0.65rem; padding: 0 4px; }
+        .angle-del { background: none; border: none; color: #ff6b81; cursor: pointer; font-size: 0.55rem; padding: 0 4px; line-height: 1; }
+        @media (pointer: coarse) { .angle-del { font-size: 0.7rem; padding: 2px 6px; } }
         .angle-menu { position: absolute; right: 8px; top: 100%; z-index: 60; background: var(--bg-1); border: 1px solid var(--border-h); border-radius: 10px; padding: 6px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 8px 30px rgba(0,0,0,.4); text-transform: none; letter-spacing: 0; }
         .angle-menu button { background: none; border: none; color: var(--text-1); text-align: left; padding: 8px 10px; border-radius: 6px; cursor: pointer; font: 500 0.8rem var(--font-body); white-space: nowrap; display: flex; gap: 8px; align-items: center; }
         .angle-menu button:hover { background: var(--bg-3); }
@@ -2522,20 +2523,89 @@
         }
         const angleKindLabel = k => k === 'tilt' ? 'Inclinazione' : 'Angolo';
 
-        // Punto dove mettere l'etichetta: sopra il segmento (tilt) o fuori dall'apertura dell'angolo (3p)
-        function angleLabelPos(kind, px, dist) {
-            if (kind === 'tilt') return [(px[0][0] + px[1][0]) / 2, (px[0][1] + px[1][1]) / 2 - dist * 0.8];
-            const [b, a, c] = [px[1], px[0], px[2]];
+        // Posizioni candidate per l'etichetta, in ordine di preferenza:
+        // 3p → fuori dall'apertura dell'angolo, ruotando attorno al vertice; tilt → sopra/sotto il segmento.
+        function angleLabelCandidates(kind, px, unit) {
+            const out = [];
+            if (kind === 'tilt') {
+                const [a, b] = px;
+                const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+                let nx = -(b[1] - a[1]) / len, ny = (b[0] - a[0]) / len;
+                if (ny > 0) { nx = -nx; ny = -ny; }                      // prima "sopra"
+                for (const t of [0.5, 0.3, 0.7, 0.15, 0.85])
+                    for (const side of [1, -1])
+                        for (const d of [16, 26, 38, 52, 68]) {
+                            const mx = a[0] + (b[0] - a[0]) * t, my = a[1] + (b[1] - a[1]) * t;
+                            out.push([mx + nx * side * d * unit, my + ny * side * d * unit]);
+                        }
+                return out;
+            }
+            const [a, b, c] = px;
             const u = p => { const d = Math.hypot(p[0] - b[0], p[1] - b[1]) || 1; return [(p[0] - b[0]) / d, (p[1] - b[1]) / d]; };
             const ua = u(a), uc = u(c);
-            let bx = ua[0] + uc[0], by = ua[1] + uc[1];
-            const bl = Math.hypot(bx, by);
-            if (bl < 0.01) { bx = -ua[1]; by = ua[0]; } else { bx /= bl; by /= bl; }
-            return [b[0] - bx * dist, b[1] - by * dist];
+            let ox = -(ua[0] + uc[0]), oy = -(ua[1] + uc[1]);
+            const ol = Math.hypot(ox, oy);
+            if (ol < 0.01) { ox = -ua[1]; oy = ua[0]; } else { ox /= ol; oy /= ol; }
+            for (const rot of [0, 35, -35, 70, -70, 110, -110, 180])
+                for (const d of [26, 38, 54, 72, 92]) {
+                    const r = rot * Math.PI / 180, cs = Math.cos(r), sn = Math.sin(r);
+                    out.push([b[0] + (ox * cs - oy * sn) * d * unit, b[1] + (ox * sn + oy * cs) * d * unit]);
+                }
+            return out;
+        }
+
+        // Sceglie per ogni etichetta la candidata che non copre punti/maniglie, segmenti né altre etichette
+        // e resta dentro l'immagine. items: [{ w, h, candidates }], obstacles: [[x, y, raggio, peso]]
+        function placeAngleLabels(items, obstacles, W, H) {
+            const placed = [];
+            return items.map(it => {
+                let best = null, bestScore = Infinity;
+                it.candidates.forEach(([x, y], i) => {
+                    const r = { l: x - it.w / 2, t: y - it.h / 2, r: x + it.w / 2, b: y + it.h / 2 };
+                    let score = i * 0.2;
+                    for (const [ox, oy, or, w] of obstacles) {
+                        const dx = Math.max(r.l - ox, 0, ox - r.r), dy = Math.max(r.t - oy, 0, oy - r.b);
+                        if (dx * dx + dy * dy < or * or) score += w;
+                    }
+                    for (const p of placed) if (r.l < p.r + 3 && r.r > p.l - 3 && r.t < p.b + 3 && r.b > p.t - 3) score += 150;
+                    if (r.l < 2 || r.t < 2 || r.r > W - 2 || r.b > H - 2) score += 60;
+                    if (score < bestScore) { bestScore = score; best = [x, y, r]; }
+                });
+                placed.push(best[2]);
+                return [best[0], best[1]];
+            });
+        }
+
+        // Ostacoli di tutti gli angoli di una vista: punti (peso alto) e campioni lungo i segmenti
+        function angleObstacles(allPx, pointR, unit) {
+            const obs = [];
+            allPx.forEach(px => {
+                px.forEach(p => obs.push([p[0], p[1], pointR, 200]));
+                for (let i = 0; i < px.length - 1; i++)
+                    for (let t = 0.1; t < 1; t += 0.1)
+                        obs.push([px[i][0] + (px[i + 1][0] - px[i][0]) * t, px[i][1] + (px[i + 1][1] - px[i][1]) * t, 3 * unit, 6]);
+            });
+            return obs;
+        }
+
+        function drawAngleLabel(ctx, text, x, y, unit) {
+            ctx.save();
+            ctx.font = `bold ${10 * unit}px Helvetica, Arial, sans-serif`;
+            const w = ctx.measureText(text).width + 8 * unit, h = 15 * unit;
+            ctx.fillStyle = 'rgba(7,9,15,0.82)';
+            ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w / 2, y - h / 2, w, h, 3 * unit) : ctx.rect(x - w / 2, y - h / 2, w, h); ctx.fill();
+            ctx.fillStyle = ANGLE_COLOR; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(text, x, y + 0.5 * unit);
+            ctx.restore();
+        }
+        function angleLabelSize(ctx, text, unit) {
+            ctx.save(); ctx.font = `bold ${10 * unit}px Helvetica, Arial, sans-serif`;
+            const w = ctx.measureText(text).width + 8 * unit; ctx.restore();
+            return { w, h: 15 * unit };
         }
 
         // Disegna un angolo su canvas. toPx(u, v) → pixel; unit = scala di spessori e testi.
-        function drawAngle(ctx, a, toPx, natW, natH, unit = 1, withLabel = true) {
+        function drawAngle(ctx, a, toPx, natW, natH, unit = 1) {
             const px = [];
             for (let i = 0; i < a.pts.length; i += 2) px.push(toPx(a.pts[i], a.pts[i + 1]));
             const val = angleValue(a.kind, a.pts, natW, natH);
@@ -2564,17 +2634,6 @@
             }
             ctx.setLineDash([]);
             px.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], 3.2 * unit, 0, 2 * Math.PI); ctx.fill(); });
-            if (withLabel) {
-                const text = (a.name ? a.name + '  ' : '') + val.text;
-                const [lx, ly] = angleLabelPos(a.kind, px, 22 * unit);
-                ctx.shadowBlur = 0;
-                ctx.font = `bold ${12 * unit}px Helvetica, Arial, sans-serif`;
-                const w = ctx.measureText(text).width + 10 * unit, h = 18 * unit;
-                ctx.fillStyle = 'rgba(7,9,15,0.85)';
-                ctx.beginPath(); ctx.roundRect ? ctx.roundRect(lx - w / 2, ly - h / 2, w, h, 4 * unit) : ctx.rect(lx - w / 2, ly - h / 2, w, h); ctx.fill();
-                ctx.fillStyle = ANGLE_COLOR; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText(text, lx, ly + 0.5 * unit);
-            }
             ctx.restore();
         }
 
@@ -2604,11 +2663,13 @@
             cv.width = Math.round(ov.clientWidth * dpr); cv.height = Math.round(ov.clientHeight * dpr);
             const ctx = cv.getContext('2d');
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            ov.querySelectorAll('.posture-angle').forEach(el => {
+            const els = [...ov.querySelectorAll('.posture-angle')];
+            const items = [], allPx = [];
+            els.forEach(el => {
                 el.style.display = f ? '' : 'none';
                 if (!f) return;
                 const a = angleData(el);
-                drawAngle(ctx, a, f.toPx, f.natW, f.natH, 1, false);
+                drawAngle(ctx, a, f.toPx, f.natW, f.natH, 1);
                 const px = [];
                 el.querySelectorAll('.angle-pt').forEach((h, i) => {
                     const p = f.toPx(a.pts[i * 2], a.pts[i * 2 + 1]); px.push(p);
@@ -2616,9 +2677,13 @@
                 });
                 const lab = el.querySelector('.angle-label');
                 lab.querySelector('span').textContent = (a.name ? a.name + ' ' : '') + angleValue(a.kind, a.pts, f.natW, f.natH).text;
-                const [lx, ly] = angleLabelPos(a.kind, px, 24);
-                lab.style.left = lx + 'px'; lab.style.top = ly + 'px';
+                allPx.push(px);
+                items.push({ lab, w: lab.offsetWidth, h: lab.offsetHeight, candidates: angleLabelCandidates(a.kind, px, 1) });
             });
+            if (!items.length) return;
+            const handleR = window.matchMedia('(pointer: coarse)').matches ? 17 : 12;   // raggio maniglia + margine
+            placeAngleLabels(items, angleObstacles(allPx, handleR, 1), f.W, f.H)
+                .forEach(([x, y], i) => { items[i].lab.style.left = x + 'px'; items[i].lab.style.top = y + 'px'; });
         }
         function refreshAllAngles() { POSTURE_VIEWS.forEach(refreshAngles); }
 
@@ -2849,7 +2914,19 @@
             });
 
             // Angoli — coordinate della foto
-            if (frame) (lines || []).filter(l => l.type === 'angle').forEach(a => drawAngle(ctx, a, frame.toPx, frame.natW, frame.natH, 2.2));
+            if (frame) {
+                const U = 2.2, angles = (lines || []).filter(l => l.type === 'angle');
+                const allPx = [], items = [];
+                angles.forEach(a => {
+                    drawAngle(ctx, a, frame.toPx, frame.natW, frame.natH, U);
+                    const px = []; for (let i = 0; i < a.pts.length; i += 2) px.push(frame.toPx(a.pts[i], a.pts[i + 1]));
+                    const text = (a.name ? a.name + '  ' : '') + angleValue(a.kind, a.pts, frame.natW, frame.natH).text;
+                    allPx.push(px);
+                    items.push({ text, ...angleLabelSize(ctx, text, U), candidates: angleLabelCandidates(a.kind, px, U) });
+                });
+                placeAngleLabels(items, angleObstacles(allPx, 7 * U, U), CW, CH)
+                    .forEach(([x, y], i) => drawAngleLabel(ctx, items[i].text, x, y, U));
+            }
             return out;
         }
 
