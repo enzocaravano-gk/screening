@@ -2,6 +2,9 @@
 
 App web per lo screening posturale visivo degli atleti: 4 foto (frontale, posteriore, laterali) con linee guida e cerchi, checklist per distretto, note, storico delle sessioni e report PDF.
 
+- **Misura angoli** (📐 su ogni foto): *Angolo* a 3 punti (es. ginocchio, gomito) o *Inclinazione* a 2 punti rispetto all'orizzontale/verticale (es. spalle, bacino). Tocca il valore per dare un nome alla misura.
+- **Confronto sessioni**: foto *Prima/Dopo* affiancate o sovrapposte, variazioni della valutazione e degli angoli, PDF del confronto. Per confrontare un angolo tra due sessioni, dagli lo stesso nome in entrambe.
+
 > Screening visivo preliminare: non sostituisce la valutazione di uno specialista.
 
 ## Come usarla

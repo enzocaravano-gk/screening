@@ -771,6 +771,54 @@
         }
 
         :focus-visible { outline: 2px solid var(--neon); outline-offset: 2px; }
+
+        /* ANGOLI */
+        .posture-card-title { position: relative; }
+        .angle-canvas { position: absolute; top: 24px; left: 24px; width: calc(100% - 24px); height: calc(100% - 24px); pointer-events: none; z-index: 29; }
+        .posture-angle { position: absolute; inset: 0; pointer-events: none; }
+        .angle-pt { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: rgba(255,214,0,0.2); border: 2px solid #ffd600; pointer-events: all; cursor: grab; touch-action: none; z-index: 2; transition: transform .1s; }
+        .angle-pt.vertex { background: rgba(255,214,0,0.55); }
+        .angle-pt.dragging { cursor: grabbing; transform: scale(1.35); }
+        @media (pointer: coarse) { .angle-pt { width: 26px; height: 26px; margin: -13px 0 0 -13px; } }
+        .angle-label { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 2px; background: rgba(7,9,15,0.85); color: #ffd600; font: 700 0.72rem var(--font-mono); padding: 2px 3px 2px 7px; border-radius: 6px; border: 1px solid rgba(255,214,0,0.5); pointer-events: all; white-space: nowrap; z-index: 3; }
+        .angle-label span { cursor: text; }
+        .angle-del { background: none; border: none; color: #ff6b81; cursor: pointer; font-size: 0.65rem; padding: 0 4px; }
+        .angle-menu { position: absolute; right: 8px; top: 100%; z-index: 60; background: var(--bg-1); border: 1px solid var(--border-h); border-radius: 10px; padding: 6px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 8px 30px rgba(0,0,0,.4); text-transform: none; letter-spacing: 0; }
+        .angle-menu button { background: none; border: none; color: var(--text-1); text-align: left; padding: 8px 10px; border-radius: 6px; cursor: pointer; font: 500 0.8rem var(--font-body); white-space: nowrap; display: flex; gap: 8px; align-items: center; }
+        .angle-menu button:hover { background: var(--bg-3); }
+        .angle-menu small { color: var(--text-3); font-size: 0.68rem; }
+
+        #sessionControls { flex-wrap: wrap; justify-content: flex-end; max-width: 100%; }
+        @media (max-width: 600px) { #sessionControls .btn { padding: 8px 10px; font-size: 0.78rem; } }
+
+        /* CONFRONTO */
+        .compare-box { max-width: 1100px; max-height: 94vh; overflow-y: auto; overflow-x: hidden; padding: 20px; min-width: 0; }
+        .compare-controls > * { min-width: 0; max-width: 100%; }
+        .compare-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+        .compare-controls label { font-size: 0.68rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-3); display: flex; align-items: center; gap: 6px; }
+        .compare-controls select { background: var(--bg-2); color: var(--text-1); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; font: 500 0.8rem var(--font-body); max-width: min(220px, 62vw); }
+        .seg { display: inline-flex; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 2px; flex-wrap: wrap; }
+        .seg button { background: none; border: none; color: var(--text-2); padding: 6px 10px; border-radius: 6px; cursor: pointer; font: 600 0.75rem var(--font-body); }
+        .seg button.active { background: var(--neon-dim); color: var(--neon); }
+        .compare-stage { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .compare-stage.overlay { grid-template-columns: minmax(0, 480px); justify-content: center; }
+        .compare-fig { margin: 0; background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        .compare-fig figcaption { padding: 8px 12px; font-size: 0.75rem; font-weight: 700; color: var(--text-2); display: flex; justify-content: space-between; gap: 8px; }
+        .compare-fig figcaption b { color: var(--neon); }
+        .compare-canvas-wrap { position: relative; }
+        .compare-canvas-wrap canvas { display: block; width: 100%; height: auto; background: #0d0f14; }
+        .compare-canvas-wrap canvas.top { position: absolute; inset: 0; }
+        .compare-tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 16px; }
+        .cmp-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+        .cmp-card .posture-block-title { margin-bottom: 8px; }
+        .cmp-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        .cmp-table th, .cmp-table td { padding: 6px 6px; border-bottom: 1px solid var(--border); text-align: left; }
+        .cmp-table th { font-size: 0.62rem; letter-spacing: 1px; text-transform: uppercase; color: var(--text-3); }
+        .cmp-table .num { font-family: var(--font-mono); text-align: right; white-space: nowrap; }
+        .cmp-up { color: var(--red); } .cmp-down { color: var(--green); } .cmp-eq { color: var(--text-3); }
+        .cmp-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.8rem; color: var(--text-2); white-space: pre-wrap; }
+        .cmp-notes b { display: block; color: var(--text-3); font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+        @media (max-width: 600px) { .compare-stage, .cmp-notes { grid-template-columns: 1fr 1fr; gap: 6px; } .compare-box { padding: 12px; } }
         .pdf-preview-box { max-width: 900px; height: 92vh; display: flex; flex-direction: column; padding: 18px; }
         .pdf-preview-pages { flex: 1; overflow-y: auto; background: var(--bg-3); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
         .pdf-preview-page { width: 100%; max-width: 820px; height: auto; background: #fff; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.35); }
@@ -833,6 +881,9 @@
             <div id="sessionControls" style="display:none;margin-left:auto;align-items:center;gap:8px">
                 <button class="btn btn-ghost" onclick="openStorico()" id="storicoBtn" title="Storico sessioni">
                     <i class="fas fa-history"></i> <span id="storicoCount" style="font-size:0.72rem;opacity:0.7"></span>
+                </button>
+                <button class="btn btn-ghost" onclick="openCompare()" title="Confronta due sessioni">
+                    <i class="fas fa-columns"></i> Confronta
                 </button>
                 <button class="btn btn-ghost" onclick="newSession()" title="Nuova sessione">
                     <i class="fas fa-plus"></i> Nuova Sessione
@@ -1030,6 +1081,7 @@
                         <div style="display:flex;gap:6px;">
                             <button class="posture-card-btn zoom-toggle-btn" id="zoomBtn_${v}" onclick="toggleZoom('${v}')" title="Zoom ${label}" aria-pressed="false"><i class="fas fa-search-plus"></i></button>
                             <button class="posture-card-btn" onclick="addPostureCircle('${v}')" title="Aggiungi cerchio ${label}"><i class="fas fa-circle-notch"></i></button>
+                            <button class="posture-card-btn" onclick="openAngleMenu('${v}', this)" title="Misura angolo ${label}" aria-haspopup="menu"><i class="fas fa-drafting-compass"></i></button>
                             <button class="posture-card-btn" onclick="triggerPosturePhoto('${v}')" title="Carica foto ${label}"><i class="fas fa-camera"></i></button>
                             <button class="posture-card-btn danger" onclick="clearPosturePhoto('${v}')" title="Rimuovi foto ${label}"><i class="fas fa-trash"></i></button>
                         </div>
@@ -1046,6 +1098,7 @@
                             <div class="zoom-badge" id="zoomBadge_${v}">1×</div>
                             <div class="zoom-hint">Scroll per zoom · Trascina per spostarti</div>
                         </div>
+                        <canvas class="angle-canvas" id="angleCanvas_${v}" aria-hidden="true"></canvas>
                         <div class="lines-overlay" id="lines_${v}"></div>
                     </div>
                     <input type="file" id="fileInput_${v}" accept="image/*" style="display:none" aria-label="Foto ${label}" onchange="loadPosturePhoto('${v}',event)">
@@ -1405,7 +1458,7 @@
             document.getElementById('navPostura').classList.toggle('active', id === 'postura');
             document.getElementById('navAtleti').classList.toggle('active', ['atleti','form-atleta','detail-atleta'].includes(id));
             if (id === 'atleti') renderAthletes();
-            if (id === 'postura') populatePosturePlayerSelect();
+            if (id === 'postura') { populatePosturePlayerSelect(); requestAnimationFrame(refreshAllAngles); }
         }
 
         // =========================================
@@ -1801,9 +1854,15 @@
             POSTURE_VIEWS.forEach(v => {
                 const ph = sess.photos?.[v];
                 photos[v] = typeof ph === 'string' && ph.startsWith('data:image/') ? ph : null;
-                lines[v]  = (Array.isArray(sess.lines?.[v]) ? sess.lines[v] : []).filter(isObj).map(l => l.type === 'circle'
-                    ? { type: 'circle', cx: +l.cx || 50, cy: +l.cy || 50, size: +l.size || 60 }
-                    : { type: l.type === 'v' ? 'v' : 'h', pct: +l.pct || 50 });
+                lines[v]  = (Array.isArray(sess.lines?.[v]) ? sess.lines[v] : []).filter(isObj).map(l => {
+                    if (l.type === 'circle') return { type: 'circle', cx: +l.cx || 50, cy: +l.cy || 50, size: +l.size || 60 };
+                    if (l.type === 'angle') {
+                        const kind = l.kind === 'tilt' ? 'tilt' : '3p';
+                        if (!Array.isArray(l.pts) || l.pts.length !== (kind === 'tilt' ? 4 : 6)) return null;
+                        return { type: 'angle', kind, pts: l.pts.map(n => Math.max(0, Math.min(1, +n || 0))), name: str(l.name) };
+                    }
+                    return { type: l.type === 'v' ? 'v' : 'h', pct: +l.pct || 50 };
+                }).filter(Boolean);
             });
             const checks = {};
             POSTURE_CHECKS.forEach(c => { const n = parseInt(sess.checks?.[c.id]); if (n >= 1 && n <= 10) checks[c.id] = n; });
@@ -2094,6 +2153,7 @@
             const img = document.getElementById('photo_'+v);
             const ph  = document.getElementById('placeholder_'+v);
             img.src = ''; img.style.display = 'none'; ph.style.display = 'flex';
+            refreshAngles(v);
         }
         function collectPosturePhotos() {
             const r = {};
@@ -2206,8 +2266,10 @@
             document.getElementById('lines_'+view).innerHTML = '';
             (lines||[]).forEach(l => {
                 if (l.type === 'circle') _createCircle(view, l.cx, l.cy, l.size);
+                else if (l.type === 'angle') _createAngle(view, l.kind, l.pts, l.name);
                 else _createLine(view, l.type, l.pct);
             });
+            refreshAngles(view);
         }
         function collectPostureLines() {
             const r = {};
@@ -2216,7 +2278,8 @@
                                      .map(el => ({ type: el.dataset.type || (el.classList.contains('h') ? 'h' : 'v'), pct: parseFloat(el.dataset.pct) }));
                 const circles = Array.from(document.getElementById('lines_'+v).querySelectorAll('.posture-circle'))
                                      .map(el => ({ type: 'circle', cx: parseFloat(el.dataset.cx), cy: parseFloat(el.dataset.cy), size: parseInt(el.dataset.size) }));
-                r[v] = [...lines, ...circles];
+                const angles  = Array.from(document.getElementById('lines_'+v).querySelectorAll('.posture-angle')).map(angleData);
+                r[v] = [...lines, ...circles, ...angles];
             });
             return r;
         }
@@ -2433,6 +2496,248 @@
 
 
         // =========================================
+        // ANGOLI
+        // =========================================
+        // I punti sono salvati in coordinate della FOTO (0–1 su larghezza/altezza originali),
+        // così i gradi sono quelli reali dell'immagine e restano corretti con zoom, PDF e confronto.
+        //  · '3p'   → angolo in B tra i segmenti BA e BC (es. ginocchio, gomito, cifosi)
+        //  · 'tilt' → inclinazione del segmento AB rispetto all'orizzontale (o alla verticale se > 45°)
+        const ANGLE_COLOR = '#ffd600';
+        const VIEW_LABELS = { front: 'Frontale', back: 'Posteriore', dx: 'Laterale DX', sx: 'Laterale SX' };
+
+        function angleValue(kind, pts, natW, natH) {
+            const P = i => [pts[i * 2] * natW, pts[i * 2 + 1] * natH];
+            if (kind === 'tilt') {
+                const [ax, ay] = P(0), [bx, by] = P(1);
+                const fromH = Math.atan2(Math.abs(by - ay), Math.abs(bx - ax)) * 180 / Math.PI;
+                return fromH <= 45
+                    ? { deg: fromH,      ref: 'orizzontale', text: `↔ ${fromH.toFixed(1)}°` }
+                    : { deg: 90 - fromH, ref: 'verticale',   text: `↕ ${(90 - fromH).toFixed(1)}°` };
+            }
+            const [ax, ay] = P(0), [bx, by] = P(1), [cx, cy] = P(2);
+            const v1 = [ax - bx, ay - by], v2 = [cx - bx, cy - by];
+            const n = Math.hypot(...v1) * Math.hypot(...v2);
+            const deg = n ? Math.acos(Math.max(-1, Math.min(1, (v1[0] * v2[0] + v1[1] * v2[1]) / n))) * 180 / Math.PI : 0;
+            return { deg, ref: null, text: `${deg.toFixed(1)}°` };
+        }
+        const angleKindLabel = k => k === 'tilt' ? 'Inclinazione' : 'Angolo';
+
+        // Punto dove mettere l'etichetta: sopra il segmento (tilt) o fuori dall'apertura dell'angolo (3p)
+        function angleLabelPos(kind, px, dist) {
+            if (kind === 'tilt') return [(px[0][0] + px[1][0]) / 2, (px[0][1] + px[1][1]) / 2 - dist * 0.8];
+            const [b, a, c] = [px[1], px[0], px[2]];
+            const u = p => { const d = Math.hypot(p[0] - b[0], p[1] - b[1]) || 1; return [(p[0] - b[0]) / d, (p[1] - b[1]) / d]; };
+            const ua = u(a), uc = u(c);
+            let bx = ua[0] + uc[0], by = ua[1] + uc[1];
+            const bl = Math.hypot(bx, by);
+            if (bl < 0.01) { bx = -ua[1]; by = ua[0]; } else { bx /= bl; by /= bl; }
+            return [b[0] - bx * dist, b[1] - by * dist];
+        }
+
+        // Disegna un angolo su canvas. toPx(u, v) → pixel; unit = scala di spessori e testi.
+        function drawAngle(ctx, a, toPx, natW, natH, unit = 1, withLabel = true) {
+            const px = [];
+            for (let i = 0; i < a.pts.length; i += 2) px.push(toPx(a.pts[i], a.pts[i + 1]));
+            const val = angleValue(a.kind, a.pts, natW, natH);
+            ctx.save();
+            ctx.strokeStyle = ANGLE_COLOR; ctx.fillStyle = ANGLE_COLOR;
+            ctx.lineWidth = 2.2 * unit; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 3 * unit;
+            ctx.beginPath();
+            px.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p));
+            ctx.stroke();
+            ctx.setLineDash([5 * unit, 4 * unit]); ctx.lineWidth = 1.4 * unit;
+            if (a.kind === 'tilt') {
+                // riferimento tratteggiato: orizzontale o verticale dal punto A
+                const [p0, p1] = px;
+                ctx.beginPath(); ctx.moveTo(...p0);
+                ctx.lineTo(val.ref === 'orizzontale' ? p1[0] : p0[0], val.ref === 'orizzontale' ? p0[1] : p1[1]);
+                ctx.stroke();
+            } else {
+                // arco nel vertice
+                const [p0, b, p2] = px;
+                const a1 = Math.atan2(p0[1] - b[1], p0[0] - b[0]), a2 = Math.atan2(p2[1] - b[1], p2[0] - b[0]);
+                let diff = a2 - a1; while (diff > Math.PI) diff -= 2 * Math.PI; while (diff < -Math.PI) diff += 2 * Math.PI;
+                const r = Math.min(28 * unit, 0.45 * Math.min(Math.hypot(p0[0] - b[0], p0[1] - b[1]), Math.hypot(p2[0] - b[0], p2[1] - b[1])));
+                ctx.setLineDash([]);
+                ctx.beginPath(); ctx.arc(b[0], b[1], r, a1, a1 + diff, diff < 0); ctx.stroke();
+            }
+            ctx.setLineDash([]);
+            px.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], 3.2 * unit, 0, 2 * Math.PI); ctx.fill(); });
+            if (withLabel) {
+                const text = (a.name ? a.name + '  ' : '') + val.text;
+                const [lx, ly] = angleLabelPos(a.kind, px, 22 * unit);
+                ctx.shadowBlur = 0;
+                ctx.font = `bold ${12 * unit}px Helvetica, Arial, sans-serif`;
+                const w = ctx.measureText(text).width + 10 * unit, h = 18 * unit;
+                ctx.fillStyle = 'rgba(7,9,15,0.85)';
+                ctx.beginPath(); ctx.roundRect ? ctx.roundRect(lx - w / 2, ly - h / 2, w, h, 4 * unit) : ctx.rect(lx - w / 2, ly - h / 2, w, h); ctx.fill();
+                ctx.fillStyle = ANGLE_COLOR; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(text, lx, ly + 0.5 * unit);
+            }
+            ctx.restore();
+        }
+
+        const angleData = el => ({ type: 'angle', kind: el.dataset.kind, pts: JSON.parse(el.dataset.pts), name: el.dataset.name || '' });
+
+        // Conversione coordinate foto ↔ pixel dell'overlay, tenendo conto di object-fit:contain e dello zoom
+        function angleFrame(view) {
+            const img = document.getElementById('photo_' + view);
+            const ov  = document.getElementById('lines_' + view);
+            if (!img || img.style.display === 'none' || !img.naturalWidth || !ov.clientWidth) return null;
+            const W = ov.clientWidth, H = ov.clientHeight, natW = img.naturalWidth, natH = img.naturalHeight;
+            const k = Math.min(W / natW, H / natH), ox = (W - natW * k) / 2, oy = (H - natH * k) / 2;
+            const z = pzMap[view] || { scale: 1, tx: 0, ty: 0 };
+            return {
+                W, H, natW, natH, scale: z.scale,
+                toPx:   (u, v) => [z.tx + z.scale * (ox + u * natW * k), z.ty + z.scale * (oy + v * natH * k)],
+                fromPx: (x, y) => [((x - z.tx) / z.scale - ox) / (natW * k), ((y - z.ty) / z.scale - oy) / (natH * k)],
+            };
+        }
+
+        function refreshAngles(view) {
+            const ov = document.getElementById('lines_' + view);
+            const cv = document.getElementById('angleCanvas_' + view);
+            if (!ov || !cv) return;
+            const f = angleFrame(view);
+            const dpr = window.devicePixelRatio || 1;
+            cv.width = Math.round(ov.clientWidth * dpr); cv.height = Math.round(ov.clientHeight * dpr);
+            const ctx = cv.getContext('2d');
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ov.querySelectorAll('.posture-angle').forEach(el => {
+                el.style.display = f ? '' : 'none';
+                if (!f) return;
+                const a = angleData(el);
+                drawAngle(ctx, a, f.toPx, f.natW, f.natH, 1, false);
+                const px = [];
+                el.querySelectorAll('.angle-pt').forEach((h, i) => {
+                    const p = f.toPx(a.pts[i * 2], a.pts[i * 2 + 1]); px.push(p);
+                    h.style.left = p[0] + 'px'; h.style.top = p[1] + 'px';
+                });
+                const lab = el.querySelector('.angle-label');
+                lab.querySelector('span').textContent = (a.name ? a.name + ' ' : '') + angleValue(a.kind, a.pts, f.natW, f.natH).text;
+                const [lx, ly] = angleLabelPos(a.kind, px, 24);
+                lab.style.left = lx + 'px'; lab.style.top = ly + 'px';
+            });
+        }
+        function refreshAllAngles() { POSTURE_VIEWS.forEach(refreshAngles); }
+
+        function _createAngle(view, kind, pts, name) {
+            const ov = document.getElementById('lines_' + view);
+            const el = document.createElement('div');
+            el.className = 'posture-angle';
+            el.dataset.type = 'angle';
+            el.dataset.kind = kind;
+            el.dataset.pts  = JSON.stringify(pts.map(n => +(+n).toFixed(5)));
+            if (name) el.dataset.name = name;
+
+            const n = pts.length / 2;
+            const names = kind === 'tilt' ? ['Punto A', 'Punto B'] : ['Punto A', 'Vertice', 'Punto C'];
+            for (let i = 0; i < n; i++) {
+                const h = document.createElement('div');
+                h.className = 'angle-pt' + (kind === '3p' && i === 1 ? ' vertex' : '');
+                h.title = names[i] + ' — trascina per spostare';
+                h.addEventListener('pointerdown', e => {
+                    e.preventDefault(); e.stopPropagation();
+                    h.setPointerCapture?.(e.pointerId);
+                    h.classList.add('dragging');
+                    const move = ev => {
+                        const f = angleFrame(view); if (!f) return;
+                        const r = ov.getBoundingClientRect();
+                        const [u, v] = f.fromPx(ev.clientX - r.left, ev.clientY - r.top);
+                        const p = JSON.parse(el.dataset.pts);
+                        p[i * 2] = +Math.max(0, Math.min(1, u)).toFixed(5);
+                        p[i * 2 + 1] = +Math.max(0, Math.min(1, v)).toFixed(5);
+                        el.dataset.pts = JSON.stringify(p);
+                        refreshAngles(view);
+                    };
+                    const up = () => {
+                        h.classList.remove('dragging');
+                        h.removeEventListener('pointermove', move);
+                        h.removeEventListener('pointerup', up);
+                        h.removeEventListener('pointercancel', up);
+                    };
+                    h.addEventListener('pointermove', move);
+                    h.addEventListener('pointerup', up);
+                    h.addEventListener('pointercancel', up);
+                });
+                el.appendChild(h);
+            }
+
+            const lab = document.createElement('div');
+            lab.className = 'angle-label';
+            lab.innerHTML = '<span title="Tocca per dare un nome alla misura"></span><button class="angle-del" title="Elimina misura">✕</button>';
+            lab.querySelector('span').addEventListener('click', () => {
+                const nm = prompt('Nome della misura (es. Spalle, Bacino, Ginocchio DX):', el.dataset.name || '');
+                if (nm === null) return;
+                if (nm.trim()) el.dataset.name = nm.trim().slice(0, 40); else delete el.dataset.name;
+                refreshAngles(view);
+            });
+            lab.querySelector('.angle-del').addEventListener('click', e => { e.stopPropagation(); el.remove(); refreshAngles(view); });
+            el.appendChild(lab);
+            ov.appendChild(el);
+            refreshAngles(view);
+            return el;
+        }
+
+        function addPostureAngle(view, kind) {
+            const f = angleFrame(view);
+            if (!f) { showToast('Carica prima una foto per misurare gli angoli', 'error'); return; }
+            // posiziona i punti al centro dell'area visibile (anche con lo zoom attivo)
+            const [cu, cv] = f.fromPx(f.W / 2, f.H / 2);
+            const d = 0.1 / (f.scale || 1);
+            const clamp = n => Math.max(0.02, Math.min(0.98, n));
+            const pts = kind === 'tilt'
+                ? [cu - 1.4 * d, cv, cu + 1.4 * d, cv]
+                : [cu - d, cv - 1.2 * d, cu, cv, cu + d * 0.9, cv + 1.2 * d];
+            _createAngle(view, kind, pts.map(clamp));
+        }
+
+        function closeAngleMenu() {
+            document.getElementById('angleMenu')?.remove();
+            document.removeEventListener('pointerdown', _angleMenuOutside, true);
+        }
+        function _angleMenuOutside(e) { if (!e.target.closest('#angleMenu')) closeAngleMenu(); }
+        function openAngleMenu(view, btn) {
+            const wasOpen = document.getElementById('angleMenu')?.dataset.view === view;
+            closeAngleMenu();
+            if (wasOpen) return;
+            if (!angleFrame(view)) { showToast('Carica prima una foto per misurare gli angoli', 'error'); return; }
+            const menu = document.createElement('div');
+            menu.className = 'angle-menu'; menu.id = 'angleMenu'; menu.dataset.view = view;
+            menu.setAttribute('role', 'menu');
+            menu.innerHTML = `
+                <button role="menuitem" data-k="3p"><i class="fas fa-drafting-compass"></i><span>Angolo<br><small>3 punti: es. ginocchio, gomito</small></span></button>
+                <button role="menuitem" data-k="tilt"><i class="fas fa-ruler-horizontal"></i><span>Inclinazione<br><small>2 punti: es. spalle, bacino</small></span></button>`;
+            menu.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { closeAngleMenu(); addPostureAngle(view, b.dataset.k); }));
+            btn.closest('.posture-card-title').appendChild(menu);
+            menu.querySelector('button').focus();
+            setTimeout(() => document.addEventListener('pointerdown', _angleMenuOutside, true), 0);
+        }
+
+        // Elenco misure angolari di una sessione (servono le dimensioni reali delle foto)
+        const loadImage = src => new Promise(res => {
+            if (!src) return res(null);
+            const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src;
+        });
+        async function listAngles(photos, lines) {
+            const out = [];
+            for (const v of POSTURE_VIEWS) {
+                const angles = (lines?.[v] || []).filter(l => l.type === 'angle');
+                if (!angles.length) continue;
+                const img = await loadImage(photos?.[v]);
+                if (!img) continue;
+                const count = { '3p': 0, tilt: 0 };
+                angles.forEach(a => {
+                    count[a.kind]++;
+                    out.push({ view: v, kind: a.kind, name: a.name || `${angleKindLabel(a.kind)} ${count[a.kind]}`,
+                               ...angleValue(a.kind, a.pts, img.naturalWidth, img.naturalHeight) });
+                });
+            }
+            return out;
+        }
+
+        // =========================================
         // SAVE
         // =========================================
         // ── Salvataggio automatico della sessione aperta ──
@@ -2452,7 +2757,7 @@
             root.addEventListener('change', scheduleAutoSave);
             const mo = new MutationObserver(scheduleAutoSave);
             POSTURE_VIEWS.forEach(v => {
-                mo.observe(document.getElementById('lines_' + v), { childList: true, subtree: true, attributes: true, attributeFilter: ['data-pct', 'data-cx', 'data-cy', 'data-size'] });
+                mo.observe(document.getElementById('lines_' + v), { childList: true, subtree: true, attributes: true, attributeFilter: ['data-pct', 'data-cx', 'data-cy', 'data-size', 'data-pts', 'data-name'] });
                 mo.observe(document.getElementById('photo_' + v), { attributes: true, attributeFilter: ['src'] });
             });
         }
@@ -2496,68 +2801,62 @@
         // Dimensioni canvas = card reale nel DOM (consistenti tra tutte le viste).
         // Foto disegnata con object-fit:contain, poi canvas ritagliato per eliminare bande nere.
         // Linee e cerchi con coordinate % pure.
-        async function capturePostureCard(view) {
-            const photoEl = document.getElementById('photo_' + view);
-            const overlay = document.getElementById('lines_' + view);
-            const wrapEl  = document.getElementById('canvasWrap_' + view);
-            if (!wrapEl) return null;
-
-            // Dimensioni FISSE indipendenti dallo schermo — ratio 3:4 ideale per persone in piedi
-            // Uguale per tutte le card, uguale tra sessioni diverse
+        // Disegna una vista (foto + linee + cerchi + angoli) su un canvas 900×1200.
+        // Usata dal PDF della sessione, dal confronto e dal PDF del confronto.
+        async function renderViewCanvas(photoSrc, lines, view) {
             const CW = 900, CH = 1200;
-
             const out = document.createElement('canvas');
             out.width = CW; out.height = CH;
             const ctx = out.getContext('2d');
             ctx.fillStyle = '#0d0f14';
             ctx.fillRect(0, 0, CW, CH);
 
-            const hasPhoto = photoEl && photoEl.src && photoEl.src.startsWith('data:');
-            if (hasPhoto) {
-                const imgObj = await new Promise(res => {
-                    const i = new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=photoEl.src;
-                });
-                if (imgObj) {
-                    // object-fit:contain — dimensioni card fisse come in app
-                    // le bande nere sono coerenti col background #0d0f14 dell'app
-                    const iw=imgObj.naturalWidth, ih=imgObj.naturalHeight;
-                    const sf=Math.min(CW/iw, CH/ih);
-                    const dw=iw*sf, dh=ih*sf;
-                    ctx.drawImage(imgObj, (CW-dw)/2, (CH-dh)/2, dw, dh);
-                }
+            let frame = null;
+            const imgObj = await loadImage(photoSrc);
+            if (imgObj) {
+                // object-fit:contain, come nell'app
+                const iw = imgObj.naturalWidth, ih = imgObj.naturalHeight;
+                const sf = Math.min(CW / iw, CH / ih), dw = iw * sf, dh = ih * sf, dx = (CW - dw) / 2, dy = (CH - dh) / 2;
+                ctx.drawImage(imgObj, dx, dy, dw, dh);
+                frame = { natW: iw, natH: ih, toPx: (u, v) => [dx + u * dw, dy + v * dh] };
             }
 
-            // Linee guida — % puri rispetto CW/CH fissi
-            overlay.querySelectorAll('.posture-guide-line').forEach(el => {
-                const pct=parseFloat(el.dataset.pct), isH=el.classList.contains('h');
+            // Linee guida — % rispetto al riquadro
+            (lines || []).filter(l => l.type === 'h' || l.type === 'v').forEach(l => {
+                const pct = +l.pct, isH = l.type === 'h';
                 ctx.save();
                 ctx.strokeStyle = isH ? 'rgba(0,210,255,0.9)' : 'rgba(0,220,100,0.9)';
-                ctx.lineWidth   = 2.5;
+                ctx.lineWidth = 2.5;
                 ctx.beginPath();
-                if(isH){ ctx.moveTo(0, pct/100*CH); ctx.lineTo(CW, pct/100*CH); }
-                else   { ctx.moveTo(pct/100*CW, 0); ctx.lineTo(pct/100*CW, CH); }
+                if (isH) { ctx.moveTo(0, pct / 100 * CH); ctx.lineTo(CW, pct / 100 * CH); }
+                else     { ctx.moveTo(pct / 100 * CW, 0); ctx.lineTo(pct / 100 * CW, CH); }
                 ctx.stroke(); ctx.restore();
             });
 
-            // Cerchi — % puri; size salvato in px DOM relativo all'overlay
-            // Lo scaliamo usando il rapporto overlay-DOM / CW fisso
-            const oDomW = overlay.getBoundingClientRect().width || 400;
+            // Cerchi — size in px del riquadro nell'app, scalato su CW
+            const oDomW = document.getElementById('lines_' + view)?.getBoundingClientRect().width || 400;
             const sizeScale = CW / oDomW;
-            overlay.querySelectorAll('.posture-circle').forEach(el => {
-                const cx = parseFloat(el.dataset.cx) / 100 * CW;
-                const cy = parseFloat(el.dataset.cy) / 100 * CH;
-                const r  = parseFloat(el.dataset.size) / 2 * sizeScale;
+            (lines || []).filter(l => l.type === 'circle').forEach(c => {
+                const cx = +c.cx / 100 * CW, cy = +c.cy / 100 * CH, r = +c.size / 2 * sizeScale;
                 ctx.save();
-                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
                 ctx.strokeStyle = 'rgba(255,82,82,0.95)';
-                ctx.lineWidth   = 4;
+                ctx.lineWidth = 4;
                 ctx.shadowColor = 'rgba(255,82,82,0.6)'; ctx.shadowBlur = 20;
                 ctx.stroke(); ctx.shadowBlur = 0;
                 ctx.fillStyle = 'rgba(255,82,82,0.07)'; ctx.fill();
                 ctx.restore();
             });
 
-            return out.toDataURL('image/jpeg', 0.93);
+            // Angoli — coordinate della foto
+            if (frame) (lines || []).filter(l => l.type === 'angle').forEach(a => drawAngle(ctx, a, frame.toPx, frame.natW, frame.natH, 2.2));
+            return out;
+        }
+
+        async function capturePostureCard(view) {
+            const photo = document.getElementById('photo_' + view);
+            const src = photo && photo.src && photo.src.startsWith('data:') ? photo.src : null;
+            return (await renderViewCanvas(src, collectPostureLines()[view], view)).toDataURL('image/jpeg', 0.93);
         }
 
 
@@ -2795,6 +3094,24 @@
                 doc.setDrawColor(210,225,242); doc.setLineWidth(0.25);
                 doc.line(m, y, m+uw, y);
                 y += 6;
+
+            // ── Misure angolari ──
+            {
+                const photos = collectPosturePhotos();
+                const misure = await listAngles(photos, collectPostureLines());
+                if (misure.length) {
+                    ensureSpace(30);
+                    doc.autoTable({
+                        startY: y,
+                        margin: { left: 14, right: 14 },
+                        head: [['Misure angolari', 'Vista', 'Tipo', 'Valore']],
+                        body: misure.map(m => [m.name, VIEW_LABELS[m.view], m.kind === 'tilt' ? `Inclinazione rispetto alla ${m.ref}` : 'Angolo articolare', `${m.deg.toFixed(1)}°`]),
+                        ...PDF.tableStyle([26,46,74]),
+                        columnStyles: { 3: { halign: 'right', fontStyle: 'bold' } },
+                    });
+                    y = doc.lastAutoTable.finalY + 6;
+                }
+            }
 
             // ── Note cliniche (pagina 1, sotto checklist) ──
             {
@@ -3159,6 +3476,7 @@
             if (!state || !layer) return;
             layer.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
             if (badge) badge.textContent = state.scale.toFixed(1).replace('.0','') + '×';
+            refreshAngles(view);
         }
 
         function pzClamp(view) {
@@ -3612,6 +3930,217 @@
         async function switchToBrowserStorage() { await useBrowserStorage(); afterStoreChange(); }
 
         // =========================================
+        // CONFRONTO SESSIONI
+        // =========================================
+        const cmp = { a: null, b: null, view: 'front', mode: 'side', opacity: 0.5, cache: {} };
+
+        // "12 mar 2026, 10:30" — con l'orario si distinguono le sessioni dello stesso giorno.
+        // L'etichetta si aggiunge solo se non è la data predefinita.
+        function sessionTitle(s) {
+            const dt = new Date(s.data);
+            const d = dt.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' +
+                      dt.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            const defaultLabel = dt.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+            return s.label && s.label !== defaultLabel && s.label !== 'Sessione' ? `${s.label} · ${d}` : d;
+        }
+        function cmpSessions() {
+            const list = getAtletaData(String(currentPosturePlayerId)).sessioni;
+            return { list, A: list.find(s => s.id === cmp.a), B: list.find(s => s.id === cmp.b) };
+        }
+
+        function openCompare() {
+            if (!currentPosturePlayerId) return;
+            savePostureData(true);
+            const list = getAtletaData(String(currentPosturePlayerId)).sessioni;
+            if (list.length < 2) { showToast('Servono almeno due sessioni: crea una «Nuova Sessione»', 'error'); return; }
+            let bi = list.findIndex(s => s.id === currentSessionId);
+            if (bi < 0) bi = list.length - 1;
+            const ai = bi > 0 ? bi - 1 : 1;
+            [cmp.a, cmp.b] = bi > 0 ? [list[ai].id, list[bi].id] : [list[0].id, list[1].id];
+            cmp.cache = {};
+            const p = players.find(x => x.id == currentPosturePlayerId);
+            document.getElementById('compareAthlete').textContent = p ? `${p.surname} ${p.name}` : '';
+            const opts = list.map(s => `<option value="${esc(s.id)}">${esc(sessionTitle(s))}</option>`).join('');
+            const selA = document.getElementById('compareSelA'), selB = document.getElementById('compareSelB');
+            selA.innerHTML = opts; selB.innerHTML = opts;
+            selA.value = cmp.a; selB.value = cmp.b;
+            document.getElementById('compareModal').classList.add('active');
+            renderCompare();
+        }
+        function closeCompare() { document.getElementById('compareModal').classList.remove('active'); cmp.cache = {}; }
+        function setCompare(key, val) {
+            cmp[key] = val;
+            if (key === 'opacity') { const top = document.querySelector('#compareStage canvas.top'); if (top) top.style.opacity = val; return; }
+            renderCompare();
+        }
+
+        async function cmpCanvas(sess, view) {
+            const key = sess.id + '|' + view;
+            cmp.cache[key] ??= renderViewCanvas(sess.photos?.[view], sess.lines?.[view], view);
+            return cmp.cache[key];
+        }
+
+        async function renderCompare() {
+            const { A, B } = cmpSessions();
+            if (!A || !B) return;
+            document.querySelectorAll('#compareViews button').forEach(b => b.classList.toggle('active', b.dataset.v === cmp.view));
+            document.querySelectorAll('#compareModes button').forEach(b => b.classList.toggle('active', b.dataset.m === cmp.mode));
+            document.getElementById('compareOpacityWrap').style.display = cmp.mode === 'overlay' ? '' : 'none';
+
+            const stage = document.getElementById('compareStage');
+            const [ca, cb] = await Promise.all([cmpCanvas(A, cmp.view), cmpCanvas(B, cmp.view)]);
+            const copy = (src, cls) => { const c = document.createElement('canvas'); c.width = src.width; c.height = src.height; c.getContext('2d').drawImage(src, 0, 0); if (cls) c.className = cls; return c; };
+            const fig = (title, sess, ...canvases) => {
+                const f = document.createElement('figure'); f.className = 'compare-fig';
+                const cap = document.createElement('figcaption');
+                const t = document.createElement('b'); t.textContent = title;
+                const d = document.createElement('span'); d.textContent = sess ? sessionTitle(sess) : '';
+                cap.append(t, d);
+                const w = document.createElement('div'); w.className = 'compare-canvas-wrap'; w.append(...canvases);
+                f.append(cap, w); return f;
+            };
+            stage.className = 'compare-stage' + (cmp.mode === 'overlay' ? ' overlay' : '');
+            if (cmp.mode === 'overlay') {
+                const top = copy(cb, 'top'); top.style.opacity = cmp.opacity;
+                const f = fig('Prima + Dopo', null, copy(ca), top);
+                f.querySelector('figcaption span').textContent = `${sessionTitle(A)} → ${sessionTitle(B)}`;
+                stage.replaceChildren(f);
+            } else {
+                stage.replaceChildren(fig('Prima', A, copy(ca)), fig('Dopo', B, copy(cb)));
+            }
+            await renderCompareTables(A, B);
+        }
+
+        // Variazione: per la valutazione rapida un valore più basso è migliore
+        function cmpDelta(a, b, lowerIsBetter, digits = 0, unit = '') {
+            if (a == null || b == null) return { text: '—', cls: 'cmp-eq' };
+            const d = +(b - a).toFixed(digits);
+            if (!d) return { text: '=', cls: 'cmp-eq' };
+            const text = (d > 0 ? '+' : '') + d.toFixed(digits) + unit;
+            if (lowerIsBetter == null) return { text, cls: '' };
+            const better = d < 0 === lowerIsBetter;
+            return { text: text + (better ? ' meglio' : ' peggio'), cls: better ? 'cmp-down' : 'cmp-up' };
+        }
+
+        async function compareData(A, B) {
+            const checks = POSTURE_CHECKS.map(c => {
+                const a = A.checks?.[c.id] ?? null, b = B.checks?.[c.id] ?? null;
+                return { label: c.label, a, b, delta: cmpDelta(a, b, true) };
+            });
+            const [la, lb] = await Promise.all([listAngles(A.photos, A.lines), listAngles(B.photos, B.lines)]);
+            const keys = [...new Set([...la, ...lb].map(m => m.view + '|' + m.name))];
+            const angles = keys.map(k => {
+                const ma = la.find(m => m.view + '|' + m.name === k), mb = lb.find(m => m.view + '|' + m.name === k);
+                const m = ma || mb;
+                return { view: m.view, name: m.name, a: ma?.deg ?? null, b: mb?.deg ?? null, delta: cmpDelta(ma?.deg, mb?.deg, null, 1, '°') };
+            });
+            return { checks, angles };
+        }
+
+        async function renderCompareTables(A, B) {
+            const { checks, angles } = await compareData(A, B);
+            const cell = v => v == null ? '—' : v;
+            const deg = v => v == null ? '—' : v.toFixed(1) + '°';
+            const table = (title, head, rows) => `
+                <div class="cmp-card">
+                    <div class="posture-block-title">${title}</div>
+                    <table class="cmp-table"><thead><tr>${head.map((h, i) => `<th class="${i ? 'num' : ''}">${h}</th>`).join('')}</tr></thead>
+                    <tbody>${rows.join('')}</tbody></table>
+                </div>`;
+            let html = table('Valutazione rapida', ['Distretto', 'Prima', 'Dopo', 'Variazione'],
+                checks.map(c => `<tr><td>${esc(c.label)}</td><td class="num">${cell(c.a)}</td><td class="num">${cell(c.b)}</td><td class="num ${c.delta.cls}">${c.delta.text}</td></tr>`));
+            html += angles.length
+                ? table('Misure angolari', ['Misura', 'Prima', 'Dopo', 'Variazione'],
+                    angles.map(m => `<tr><td>${esc(m.name)}<br><small style="color:var(--text-3)">${VIEW_LABELS[m.view]}</small></td><td class="num">${deg(m.a)}</td><td class="num">${deg(m.b)}</td><td class="num ${m.delta.cls}">${m.delta.text}</td></tr>`))
+                : `<div class="cmp-card"><div class="posture-block-title">Misure angolari</div><p style="font-size:0.8rem;color:var(--text-3)">Nessuna misura. Usa <i class="fas fa-drafting-compass"></i> su una foto; per confrontarle, dai lo stesso nome alla misura nelle due sessioni.</p></div>`;
+            if (A.notes || B.notes) {
+                html += `<div class="cmp-card" style="grid-column:1/-1"><div class="posture-block-title">Note cliniche</div>
+                    <div class="cmp-notes"><div><b>Prima</b>${esc(A.notes || '—')}</div><div><b>Dopo</b>${esc(B.notes || '—')}</div></div></div>`;
+            }
+            document.getElementById('compareTables').innerHTML = html;
+        }
+
+        async function exportComparePDF() {
+            const { A, B } = cmpSessions();
+            if (!A || !B) return;
+            const p = players.find(x => x.id == currentPosturePlayerId);
+            showLoading('GENERAZIONE PDF...');
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                const name = p ? `${p.surname || ''} ${p.name || ''}`.trim() : 'Atleta';
+                PDF.header(doc, name, new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }));
+                let y = 30;
+                doc.setTextColor(13,31,53); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+                doc.text(`CONFRONTO SESSIONI — ${name.toUpperCase()}`, 14, y);
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...PDF.text3);
+                doc.text(`Prima: ${sessionTitle(A)}      Dopo: ${sessionTitle(B)}`, 14, y + 6);
+                y += 12;
+
+                const { checks, angles } = await compareData(A, B);
+                const deltaColor = cls => cls === 'cmp-down' ? PDF.green : cls === 'cmp-up' ? PDF.red : PDF.text3;
+                doc.autoTable({
+                    startY: y, margin: { left: 14, right: 14 },
+                    head: [['Valutazione rapida', 'Prima', 'Dopo', 'Variazione']],
+                    body: checks.map(c => [c.label, c.a ?? '—', c.b ?? '—', c.delta.text]),
+                    ...PDF.tableStyle([26,46,74]),
+                    columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right', fontStyle: 'bold' } },
+                    didParseCell: d => { if (d.section === 'body' && d.column.index === 3) d.cell.styles.textColor = deltaColor(checks[d.row.index].delta.cls); },
+                });
+                y = doc.lastAutoTable.finalY + 6;
+                if (angles.length) {
+                    doc.autoTable({
+                        startY: y, margin: { left: 14, right: 14 },
+                        head: [['Misure angolari', 'Vista', 'Prima', 'Dopo', 'Variazione']],
+                        body: angles.map(m => [m.name, VIEW_LABELS[m.view], m.a == null ? '—' : m.a.toFixed(1) + '°', m.b == null ? '—' : m.b.toFixed(1) + '°', m.delta.text]),
+                        ...PDF.tableStyle([26,46,74]),
+                        columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right', fontStyle: 'bold' } },
+                    });
+                    y = doc.lastAutoTable.finalY + 6;
+                }
+                if (A.notes || B.notes) {
+                    doc.autoTable({
+                        startY: y, margin: { left: 14, right: 14 },
+                        head: [['Note — Prima', 'Note — Dopo']],
+                        body: [[A.notes || '—', B.notes || '—']],
+                        ...PDF.tableStyle([26,46,74]),
+                    });
+                }
+                doc.setFontSize(7); doc.setTextColor(...PDF.text3); doc.setFont('helvetica', 'normal');
+                doc.text('Screening visivo preliminare. Non sostituisce la valutazione di un professionista specializzato.', 14, 281, { maxWidth: 182 });
+
+                // Foto: una riga per vista, Prima | Dopo — due viste per pagina
+                const views = POSTURE_VIEWS.filter(v => A.photos?.[v] || B.photos?.[v]);
+                const GAP = 4, CW = (182 - GAP) / 2, TH = 7, IH = CW * 4 / 3;
+                for (let i = 0; i < views.length; i++) {
+                    if (i % 2 === 0) { doc.addPage(); PDF.header(doc, name, 'CONFRONTO FOTOGRAFICO'); }
+                    const v = views[i], top = 28 + (i % 2) * (TH + IH + 6);
+                    for (const [j, sess, lbl] of [[0, A, 'PRIMA'], [1, B, 'DOPO']]) {
+                        const x = 14 + j * (CW + GAP);
+                        doc.setFillColor(244, 247, 251); doc.rect(x, top, CW, TH, 'F');
+                        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(45, 62, 85);
+                        doc.text(`${VIEW_LABELS[v].toUpperCase()} — ${lbl}`, x + 3, top + 4.7, { charSpace: 0.4 });
+                        doc.setFont('helvetica', 'normal'); doc.setTextColor(...PDF.text3);
+                        doc.text(sessionTitle(sess), x + CW - 3, top + 4.7, { align: 'right' });
+                        if (sess.photos?.[v]) {
+                            const c = await renderViewCanvas(sess.photos[v], sess.lines?.[v], v);
+                            doc.addImage(c.toDataURL('image/jpeg', 0.9), 'JPEG', x, top + TH, CW, IH, undefined, 'FAST');
+                        } else {
+                            doc.setFillColor(26, 34, 48); doc.rect(x, top + TH, CW, IH, 'F');
+                            doc.setTextColor(74, 90, 106); doc.text('NESSUNA FOTO', x + CW / 2, top + TH + IH / 2, { align: 'center' });
+                        }
+                        doc.setDrawColor(216, 227, 239); doc.setLineWidth(0.3); doc.rect(x, top, CW, TH + IH, 'S');
+                    }
+                }
+                PDF.footer(doc);
+                hideLoading();
+                const fname = safeFileName(`SPORTHUB_Confronto_${p?.surname || ''}_${p?.name || ''}_${today()}`) + '.pdf';
+                if (await previewPDF(doc, fname)) await saveToDevice(doc.output('blob'), fname, 'report');
+            } catch (e) { console.error(e); showToast('Errore PDF: ' + e.message, 'error'); }
+            hideLoading();
+        }
+
+        // =========================================
         // ACCESSIBILITÀ
         // =========================================
         const HEADINGS = [['.app-name', 1], ['.section-title', 2], ['.ath-page-title', 2], ['.form-page-title', 2], ['.modal-title', 2],
@@ -3627,6 +4156,7 @@
         const MODAL_CANCEL = {
             backupModal:     () => closeBackupModal(),
             storicoModal:    () => closeStorico(),
+            compareModal:    () => closeCompare(),
             pdfPreviewModal: () => document.getElementById('pdfPreviewCancel').click(),
             saveReadyModal:  () => document.getElementById('saveReadyCancel').click(),
             // setupModal: nessuna chiusura, serve una scelta
@@ -3660,8 +4190,9 @@
                 }).observe(modal, { attributes: true, attributeFilter: ['class'] });
             });
 
-            // Esc chiude la finestra in primo piano; Tab resta dentro la finestra
+            // Esc chiude la finestra in primo piano (o il menu angoli); Tab resta dentro la finestra
             document.addEventListener('keydown', e => {
+                if (e.key === 'Escape' && document.getElementById('angleMenu')) { closeAngleMenu(); return; }
                 const modal = topModal();
                 if (!modal) return;
                 if (e.key === 'Escape' && MODAL_CANCEL[modal.id]) { e.preventDefault(); MODAL_CANCEL[modal.id](); }
@@ -3707,6 +4238,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             setupA11y();
             setupAutoSave();
+            POSTURE_VIEWS.forEach(v => document.getElementById('photo_' + v).addEventListener('load', () => refreshAngles(v)));
+            let resizeTimer;
+            window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(refreshAllAngles, 100); });
             initApp().catch(e => { console.error(e); showToast('Errore apertura archivio: ' + e.message, 'error'); });
             if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
                 const link = Object.assign(document.createElement('link'), { rel: 'manifest', href: 'manifest.webmanifest' });
@@ -3725,6 +4259,38 @@
             <div class="modal-title" style="font-size:1.3rem;margin-bottom:10px" id="setupTitle">Archivio dati</div>
             <p style="color:var(--text-2);font-size:0.85rem;line-height:1.7;margin-bottom:22px" id="setupText"></p>
             <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap" id="setupActions"></div>
+        </div>
+    </div>
+
+    <!-- ══ MODAL CONFRONTO SESSIONI ══ -->
+    <div class="modal-backdrop" id="compareModal" style="z-index:2000">
+        <div class="modal-box compare-box">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+                <i class="fas fa-columns" style="color:var(--neon);font-size:1.2rem"></i>
+                <div style="flex:1;min-width:0">
+                    <div class="modal-title" style="font-size:1.3rem;margin-bottom:0">Confronto sessioni</div>
+                    <div style="font-size:0.75rem;color:var(--text-3)" id="compareAthlete"></div>
+                </div>
+                <button class="btn btn-ghost" onclick="exportComparePDF()"><i class="fas fa-file-pdf"></i> PDF confronto</button>
+                <button class="btn btn-ghost" style="padding:6px 10px" onclick="closeCompare()" aria-label="Chiudi"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="compare-controls">
+                <label>Prima <select id="compareSelA" onchange="setCompare('a', this.value)"></select></label>
+                <label>Dopo <select id="compareSelB" onchange="setCompare('b', this.value)"></select></label>
+                <div class="seg" id="compareViews" role="group" aria-label="Vista">
+                    <button data-v="front" onclick="setCompare('view','front')">Frontale</button>
+                    <button data-v="back" onclick="setCompare('view','back')">Posteriore</button>
+                    <button data-v="dx" onclick="setCompare('view','dx')">Lat. DX</button>
+                    <button data-v="sx" onclick="setCompare('view','sx')">Lat. SX</button>
+                </div>
+                <div class="seg" id="compareModes" role="group" aria-label="Modalità">
+                    <button data-m="side" onclick="setCompare('mode','side')">Affiancate</button>
+                    <button data-m="overlay" onclick="setCompare('mode','overlay')">Sovrapposte</button>
+                </div>
+                <label id="compareOpacityWrap">Dopo <input type="range" min="0" max="1" step="0.05" value="0.5" oninput="setCompare('opacity', this.value)" aria-label="Trasparenza sessione Dopo"></label>
+            </div>
+            <div class="compare-stage" id="compareStage"></div>
+            <div class="compare-tables" id="compareTables"></div>
         </div>
     </div>
 
