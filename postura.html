@@ -8,6 +8,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Posturale">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <script>
+        try {
+            var t = localStorage.getItem('postura_theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+            if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        } catch (e) {}
+    </script>
     <!-- Librerie locali (cartella lib/): l'app funziona anche senza internet -->
     <link rel="stylesheet" href="lib/fonts/fonts.css">
     <link rel="stylesheet" href="lib/fontawesome/css/all.min.css">
@@ -764,6 +770,7 @@
             .actions-bar .btn { flex: 1 1 100%; }
         }
 
+        :focus-visible { outline: 2px solid var(--neon); outline-offset: 2px; }
         .pdf-preview-box { max-width: 900px; height: 92vh; display: flex; flex-direction: column; padding: 18px; }
         .pdf-preview-pages { flex: 1; overflow-y: auto; background: var(--bg-3); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
         .pdf-preview-page { width: 100%; max-width: 820px; height: auto; background: #fff; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.35); }
@@ -773,12 +780,12 @@
     <div class="ambient ambient-1"></div>
     <div class="ambient ambient-2"></div>
 
-    <div id="loadingOverlay">
+    <div id="loadingOverlay" role="status" aria-live="polite">
         <div class="loading-spinner"></div>
         <div class="loading-text" id="loadingText">Elaborazione...</div>
     </div>
 
-    <div id="toast"><i class="fas fa-check-circle"></i><span id="toastText">Salvato!</span></div>
+    <div id="toast" role="status" aria-live="polite"><i class="fas fa-check-circle"></i><span id="toastText">Salvato!</span></div>
 
     <div class="app">
         <!-- HEADER -->
@@ -816,7 +823,7 @@
         <!-- PLAYER SELECT AREA -->
         <div class="player-select-area">
             <span class="player-select-label"><i class="fas fa-child" style="margin-right:6px;color:var(--neon)"></i>Atleta</span>
-            <select class="form-select" id="posturePlayerSelect" onchange="loadPosturePlayer()" style="flex:1;max-width:360px;">
+            <select class="form-select" id="posturePlayerSelect" aria-label="Atleta" onchange="loadPosturePlayer()" style="flex:1;max-width:360px;">
                 <option value="">— Seleziona un atleta —</option>
             </select>
             <div id="playerBadge" style="display:none;" class="player-badge">
@@ -864,116 +871,7 @@
         <!-- POSTURE CONTENT -->
         <div id="postureContent" style="display:none;">
             <!-- 4 card foto + linee guida -->
-            <div class="posture-cards-grid">
-                <!-- FRONTALE -->
-                <div class="posture-card">
-                    <div class="posture-card-title">
-                        <span><i class="fas fa-user" style="margin-right:5px;color:var(--neon)"></i>Frontale</span>
-                        <div style="display:flex;gap:6px;">
-                            <button class="posture-card-btn zoom-toggle-btn" id="zoomBtn_front" onclick="toggleZoom('front')" title="Zoom"><i class="fas fa-search-plus"></i></button>
-                            <button class="posture-card-btn" onclick="addPostureCircle('front')" title="Aggiungi cerchio"><i class="fas fa-circle-notch"></i></button>
-                            <button class="posture-card-btn" onclick="triggerPosturePhoto('front')" title="Carica foto"><i class="fas fa-camera"></i></button>
-                            <button class="posture-card-btn danger" onclick="clearPosturePhoto('front')" title="Rimuovi"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                    <div class="posture-canvas-outer">
-                        <div class="posture-corner"></div>
-                        <div class="posture-ruler-top" onclick="addPostureLine('front','v',event)" title="Aggiungi linea verticale"></div>
-                        <div class="posture-ruler-left" onclick="addPostureLine('front','h',event)" title="Aggiungi linea orizzontale"></div>
-                        <div class="posture-canvas-wrap" id="canvasWrap_front">
-                            <div class="pz-layer" id="pzLayer_front">
-                                <div class="posture-placeholder" id="placeholder_front"><i class="fas fa-camera"></i><span>Clicca 📷 per foto</span></div>
-                                <img class="posture-photo" id="photo_front" style="display:none" alt="">
-                            </div>
-                            <div class="zoom-badge" id="zoomBadge_front">1×</div>
-                            <div class="zoom-hint">Scroll per zoom · Trascina per spostarti</div>
-                        </div>
-                        <div class="lines-overlay" id="lines_front"></div>
-                    </div>
-                    <input type="file" id="fileInput_front" accept="image/*" style="display:none" onchange="loadPosturePhoto('front',event)">
-                </div>
-                <!-- POSTERIORE -->
-                <div class="posture-card">
-                    <div class="posture-card-title">
-                        <span><i class="fas fa-user" style="margin-right:5px;color:var(--purple)"></i>Posteriore</span>
-                        <div style="display:flex;gap:6px;">
-                            <button class="posture-card-btn zoom-toggle-btn" id="zoomBtn_back" onclick="toggleZoom('back')" title="Zoom"><i class="fas fa-search-plus"></i></button>
-                            <button class="posture-card-btn" onclick="addPostureCircle('back')" title="Aggiungi cerchio"><i class="fas fa-circle-notch"></i></button>
-                            <button class="posture-card-btn" onclick="triggerPosturePhoto('back')" title="Carica foto"><i class="fas fa-camera"></i></button>
-                            <button class="posture-card-btn danger" onclick="clearPosturePhoto('back')" title="Rimuovi"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                    <div class="posture-canvas-outer">
-                        <div class="posture-corner"></div>
-                        <div class="posture-ruler-top" onclick="addPostureLine('back','v',event)" title="Aggiungi linea verticale"></div>
-                        <div class="posture-ruler-left" onclick="addPostureLine('back','h',event)" title="Aggiungi linea orizzontale"></div>
-                        <div class="posture-canvas-wrap" id="canvasWrap_back">
-                            <div class="pz-layer" id="pzLayer_back">
-                                <div class="posture-placeholder" id="placeholder_back"><i class="fas fa-camera"></i><span>Clicca 📷 per foto</span></div>
-                                <img class="posture-photo" id="photo_back" style="display:none" alt="">
-                            </div>
-                            <div class="zoom-badge" id="zoomBadge_back">1×</div>
-                            <div class="zoom-hint">Scroll per zoom · Trascina per spostarti</div>
-                        </div>
-                        <div class="lines-overlay" id="lines_back"></div>
-                    </div>
-                    <input type="file" id="fileInput_back" accept="image/*" style="display:none" onchange="loadPosturePhoto('back',event)">
-                </div>
-                <!-- LATERALE DX -->
-                <div class="posture-card">
-                    <div class="posture-card-title">
-                        <span><i class="fas fa-walking" style="margin-right:5px;color:var(--green)"></i>Laterale DX</span>
-                        <div style="display:flex;gap:6px;">
-                            <button class="posture-card-btn zoom-toggle-btn" id="zoomBtn_dx" onclick="toggleZoom('dx')" title="Zoom"><i class="fas fa-search-plus"></i></button>
-                            <button class="posture-card-btn" onclick="addPostureCircle('dx')" title="Aggiungi cerchio"><i class="fas fa-circle-notch"></i></button>
-                            <button class="posture-card-btn" onclick="triggerPosturePhoto('dx')" title="Carica foto"><i class="fas fa-camera"></i></button>
-                            <button class="posture-card-btn danger" onclick="clearPosturePhoto('dx')" title="Rimuovi"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                    <div class="posture-canvas-outer">
-                        <div class="posture-corner"></div>
-                        <div class="posture-ruler-top" onclick="addPostureLine('dx','v',event)" title="Aggiungi linea verticale"></div>
-                        <div class="posture-ruler-left" onclick="addPostureLine('dx','h',event)" title="Aggiungi linea orizzontale"></div>
-                        <div class="posture-canvas-wrap" id="canvasWrap_dx">
-                            <div class="pz-layer" id="pzLayer_dx">
-                                <div class="posture-placeholder" id="placeholder_dx"><i class="fas fa-camera"></i><span>Clicca 📷 per foto</span></div>
-                                <img class="posture-photo" id="photo_dx" style="display:none" alt="">
-                            </div>
-                            <div class="zoom-badge" id="zoomBadge_dx">1×</div>
-                            <div class="zoom-hint">Scroll per zoom · Trascina per spostarti</div>
-                        </div>
-                        <div class="lines-overlay" id="lines_dx"></div>
-                    </div>
-                    <input type="file" id="fileInput_dx" accept="image/*" style="display:none" onchange="loadPosturePhoto('dx',event)">
-                </div>
-                <!-- LATERALE SX -->
-                <div class="posture-card">
-                    <div class="posture-card-title">
-                        <span><i class="fas fa-walking" style="margin-right:5px;color:var(--orange);display:inline-block;transform:scaleX(-1)"></i>Laterale SX</span>
-                        <div style="display:flex;gap:6px;">
-                            <button class="posture-card-btn zoom-toggle-btn" id="zoomBtn_sx" onclick="toggleZoom('sx')" title="Zoom"><i class="fas fa-search-plus"></i></button>
-                            <button class="posture-card-btn" onclick="addPostureCircle('sx')" title="Aggiungi cerchio"><i class="fas fa-circle-notch"></i></button>
-                            <button class="posture-card-btn" onclick="triggerPosturePhoto('sx')" title="Carica foto"><i class="fas fa-camera"></i></button>
-                            <button class="posture-card-btn danger" onclick="clearPosturePhoto('sx')" title="Rimuovi"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                    <div class="posture-canvas-outer">
-                        <div class="posture-corner"></div>
-                        <div class="posture-ruler-top" onclick="addPostureLine('sx','v',event)" title="Aggiungi linea verticale"></div>
-                        <div class="posture-ruler-left" onclick="addPostureLine('sx','h',event)" title="Aggiungi linea orizzontale"></div>
-                        <div class="posture-canvas-wrap" id="canvasWrap_sx">
-                            <div class="pz-layer" id="pzLayer_sx">
-                                <div class="posture-placeholder" id="placeholder_sx"><i class="fas fa-camera"></i><span>Clicca 📷 per foto</span></div>
-                                <img class="posture-photo" id="photo_sx" style="display:none" alt="">
-                            </div>
-                            <div class="zoom-badge" id="zoomBadge_sx">1×</div>
-                            <div class="zoom-hint">Scroll per zoom · Trascina per spostarti</div>
-                        </div>
-                        <div class="lines-overlay" id="lines_sx"></div>
-                    </div>
-                    <input type="file" id="fileInput_sx" accept="image/*" style="display:none" onchange="loadPosturePhoto('sx',event)">
-                </div>
-            </div>
+            <div class="posture-cards-grid" id="postureCardsGrid"><!-- generate da renderPostureCards() --></div>
 
             <!-- Checklist valutazione -->
             <div class="posture-block">
@@ -984,7 +882,7 @@
             <!-- Note cliniche -->
             <div class="posture-block">
                 <div class="posture-block-title"><i class="fas fa-sticky-note" style="margin-right:6px"></i>Note Cliniche</div>
-                <textarea id="postureNotesText" class="posture-textarea" placeholder="Annotazioni aggiuntive, osservazioni particolari, raccomandazioni..."></textarea>
+                <textarea id="postureNotesText" class="posture-textarea" aria-label="Note cliniche" placeholder="Annotazioni aggiuntive, osservazioni particolari, raccomandazioni..."></textarea>
             </div>
 
             <!-- Barra azioni -->
@@ -1018,7 +916,7 @@
             </div>
         </div>
         <div class="ath-search-bar">
-            <input class="ath-search-input" type="text" id="athSearch" placeholder="🔍  Cerca per nome, sport, ruolo..." oninput="renderAthletes()">
+            <input class="ath-search-input" type="search" id="athSearch" aria-label="Cerca atleti" placeholder="🔍  Cerca per nome, sport, ruolo..." oninput="renderAthletes()">
         </div>
         <div id="athGrid"></div>
     </div>
@@ -1027,7 +925,7 @@
     <div class="page" id="page-form-atleta">
         <div class="form-max">
             <div class="form-page-header">
-                <button class="form-back-btn" onclick="showPage('atleti')">&#8592;</button>
+                <button class="form-back-btn" onclick="showPage('atleti')" aria-label="Torna agli atleti">&#8592;</button>
                 <div>
                     <div class="form-page-title" id="formAtletaTitle">NUOVO ATLETA</div>
                     <div class="form-page-sub">Nome e cognome sono obbligatori</div>
@@ -1040,11 +938,11 @@
             <div class="form-section">
                 <div class="form-section-title" style="color:var(--neon)"><i class="fas fa-id-card"></i> Anagrafica</div>
                 <div class="form-grid">
-                    <div class="form-field"><label>Nome *</label><input type="text" id="fNome" placeholder="Mario"></div>
-                    <div class="form-field"><label>Cognome *</label><input type="text" id="fCognome" placeholder="Rossi"></div>
-                    <div class="form-field"><label>Data di nascita</label><input type="date" id="fDob"></div>
+                    <div class="form-field"><label for="fNome">Nome *</label><input type="text" id="fNome" placeholder="Mario"></div>
+                    <div class="form-field"><label for="fCognome">Cognome *</label><input type="text" id="fCognome" placeholder="Rossi"></div>
+                    <div class="form-field"><label for="fDob">Data di nascita</label><input type="date" id="fDob"></div>
                     <div class="form-field">
-                        <label>Sesso</label>
+                        <label for="fSesso">Sesso</label>
                         <select id="fSesso">
                             <option value="">—</option>
                             <option value="M">Maschio</option>
@@ -1058,8 +956,8 @@
             <div class="form-section">
                 <div class="form-section-title" style="color:var(--orange)"><i class="fas fa-weight"></i> Dati Fisici</div>
                 <div class="form-grid">
-                    <div class="form-field"><label>Peso (kg)</label><input type="number" id="fPeso" placeholder="70" min="20" max="200" oninput="updateBMI()"></div>
-                    <div class="form-field"><label>Altezza (cm)</label><input type="number" id="fAltezza" placeholder="175" min="100" max="230" oninput="updateBMI()"></div>
+                    <div class="form-field"><label for="fPeso">Peso (kg)</label><input type="number" id="fPeso" placeholder="70" min="20" max="200" oninput="updateBMI()"></div>
+                    <div class="form-field"><label for="fAltezza">Altezza (cm)</label><input type="number" id="fAltezza" placeholder="175" min="100" max="230" oninput="updateBMI()"></div>
                     <div class="form-field"><label>BMI calcolato</label><div class="bmi-display" id="bmiDisplay">—</div></div>
                 </div>
             </div>
@@ -1068,13 +966,13 @@
             <div class="form-section">
                 <div class="form-section-title" style="color:var(--green)"><i class="fas fa-medal"></i> Dati Sportivi</div>
                 <div class="form-grid">
-                    <div class="form-field"><label>Sport praticato</label><input type="text" id="fSport" placeholder="Calcio, Atletica..."></div>
-                    <div class="form-field"><label>Ruolo / Specialità</label><input type="text" id="fRuolo" placeholder="Portiere, 100m..."></div>
-                    <div class="form-field"><label>Categoria</label><input type="text" id="fCategoria" placeholder="Under 18, Senior..."></div>
-                    <div class="form-field"><label>Club / Società</label><input type="text" id="fClub" placeholder="A.C. Roma..."></div>
+                    <div class="form-field"><label for="fSport">Sport praticato</label><input type="text" id="fSport" placeholder="Calcio, Atletica..."></div>
+                    <div class="form-field"><label for="fRuolo">Ruolo / Specialità</label><input type="text" id="fRuolo" placeholder="Portiere, 100m..."></div>
+                    <div class="form-field"><label for="fCategoria">Categoria</label><input type="text" id="fCategoria" placeholder="Under 18, Senior..."></div>
+                    <div class="form-field"><label for="fClub">Club / Società</label><input type="text" id="fClub" placeholder="A.C. Roma..."></div>
                 </div>
                 <div class="form-field" style="margin-top:12px;">
-                    <label>Note cliniche / Anamnesi</label>
+                    <label for="fNote">Note cliniche / Anamnesi</label>
                     <textarea id="fNote" placeholder="Infortuni pregressi, obiettivi, patologie..."></textarea>
                 </div>
             </div>
@@ -1089,7 +987,7 @@
     <!-- ══ PAGE: DETTAGLIO ATLETA ══ -->
     <div class="page" id="page-detail-atleta">
         <div class="detail-page-header">
-            <button class="form-back-btn" onclick="showPage('atleti')">&#8592;</button>
+            <button class="form-back-btn" onclick="showPage('atleti')" aria-label="Torna agli atleti">&#8592;</button>
             <div class="detail-avatar-lg" id="detailAvatar"></div>
             <div>
                 <div style="font-family:var(--font-display);font-size:1.6rem;letter-spacing:1px;" id="detailName"></div>
@@ -1115,6 +1013,45 @@
     </div><!-- /page-detail-atleta -->
 
     <script>
+        // =========================================
+        // CARD FOTO (4 viste, stesso modello)
+        // =========================================
+        (function renderPostureCards() {
+            const VIEWS = [
+                { v: 'front', label: 'Frontale',    icon: 'fa-user',    color: 'var(--neon)' },
+                { v: 'back',  label: 'Posteriore',  icon: 'fa-user',    color: 'var(--purple)' },
+                { v: 'dx',    label: 'Laterale DX', icon: 'fa-walking', color: 'var(--green)' },
+                { v: 'sx',    label: 'Laterale SX', icon: 'fa-walking', color: 'var(--orange)', flip: true },
+            ];
+            document.getElementById('postureCardsGrid').innerHTML = VIEWS.map(({ v, label, icon, color, flip }) => `
+                <div class="posture-card">
+                    <div class="posture-card-title">
+                        <span><i class="fas ${icon}" style="margin-right:5px;color:${color}${flip ? ';display:inline-block;transform:scaleX(-1)' : ''}"></i>${label}</span>
+                        <div style="display:flex;gap:6px;">
+                            <button class="posture-card-btn zoom-toggle-btn" id="zoomBtn_${v}" onclick="toggleZoom('${v}')" title="Zoom ${label}" aria-pressed="false"><i class="fas fa-search-plus"></i></button>
+                            <button class="posture-card-btn" onclick="addPostureCircle('${v}')" title="Aggiungi cerchio ${label}"><i class="fas fa-circle-notch"></i></button>
+                            <button class="posture-card-btn" onclick="triggerPosturePhoto('${v}')" title="Carica foto ${label}"><i class="fas fa-camera"></i></button>
+                            <button class="posture-card-btn danger" onclick="clearPosturePhoto('${v}')" title="Rimuovi foto ${label}"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="posture-canvas-outer">
+                        <div class="posture-corner"></div>
+                        <div class="posture-ruler-top" onclick="addPostureLine('${v}','v',event)" title="Aggiungi linea verticale"></div>
+                        <div class="posture-ruler-left" onclick="addPostureLine('${v}','h',event)" title="Aggiungi linea orizzontale"></div>
+                        <div class="posture-canvas-wrap" id="canvasWrap_${v}">
+                            <div class="pz-layer" id="pzLayer_${v}">
+                                <div class="posture-placeholder" id="placeholder_${v}"><i class="fas fa-camera"></i><span>Clicca 📷 per foto</span></div>
+                                <img class="posture-photo" id="photo_${v}" style="display:none" alt="Foto ${label}">
+                            </div>
+                            <div class="zoom-badge" id="zoomBadge_${v}">1×</div>
+                            <div class="zoom-hint">Scroll per zoom · Trascina per spostarti</div>
+                        </div>
+                        <div class="lines-overlay" id="lines_${v}"></div>
+                    </div>
+                    <input type="file" id="fileInput_${v}" accept="image/*" style="display:none" aria-label="Foto ${label}" onchange="loadPosturePhoto('${v}',event)">
+                </div>`).join('');
+        })();
+
         // =========================================
         // DATA LAYER — archivio sul dispositivo
         // =========================================
@@ -1367,10 +1304,11 @@
         }
 
         window.addEventListener('beforeunload', e => {
+            flushAutoSave();
             if (Archivio.pending || Archivio.saving) { Archivio.flush(); e.preventDefault(); e.returnValue = ''; }
         });
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') Archivio.flush();
+            if (document.visibilityState === 'hidden') { flushAutoSave(); Archivio.flush(); }
         });
         function loadPostureData(pid) {
             const db = loadPostureDB();
@@ -1384,6 +1322,13 @@
         function _emptyPosture() {
             return { lines: {front:[],back:[],dx:[],sx:[]}, checks: {}, notes: '', photos: {front:null,back:null,dx:null,sx:null} };
         }
+
+        // Testo dell'utente → HTML sicuro (evita che nomi o note eseguano codice)
+        function esc(v) {
+            return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
+        }
+        // Valore → argomento JS sicuro dentro un attributo onclick="..."
+        const jsArg = v => esc(JSON.stringify(String(v ?? '')));
 
         let players = loadPlayers();
         let currentPosturePlayerId = null;
@@ -1406,11 +1351,23 @@
         // =========================================
         // THEME
         // =========================================
-        function toggleTheme() {
-            const light = document.documentElement.getAttribute('data-theme') === 'light';
-            document.documentElement.setAttribute('data-theme', light ? '' : 'light');
-            document.getElementById('themeIcon').className = light ? 'fas fa-moon' : 'fas fa-sun';
+        // Tema: scelta salvata; se assente segue l'impostazione chiaro/scuro del sistema
+        const THEME_KEY = 'postura_theme';
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : '');
+            document.getElementById('themeIcon').className = theme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
         }
+        function currentTheme() {
+            try { const t = localStorage.getItem(THEME_KEY); if (t) return t; } catch {}
+            return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        function toggleTheme() {
+            const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            try { localStorage.setItem(THEME_KEY, next); } catch {}
+            applyTheme(next);
+        }
+        applyTheme(currentTheme());
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => applyTheme(currentTheme()));
 
         // =========================================
         // TOAST
@@ -1613,24 +1570,24 @@
                 return;
             }
             grid.innerHTML = `<div class="ath-grid">` + list.map(a => {
-                const initials = (a.name[0] || '') + (a.surname[0] || '');
-                const tags = [a.age ? `🎂 ${a.age} anni` : '', a.sport ? `🏅 ${a.sport}` : '', a.ruolo ? `⚡ ${a.ruolo}` : '', a.club ? `🏟 ${a.club}` : ''].filter(Boolean);
-                const db = loadPostureDB();
-                const schedeCount = (db[String(a.id)]?.schede || []).length;
-                return `<div class="ath-card" onclick="showAthleteDetail('${a.id}')">
+                const initials = esc((a.name?.[0] || '') + (a.surname?.[0] || ''));
+                const age = calcAge(a.dob);
+                const tags = [age != null ? `🎂 ${age} anni` : '', a.sport ? `🏅 ${esc(a.sport)}` : '', a.ruolo ? `⚡ ${esc(a.ruolo)}` : '', a.club ? `🏟 ${esc(a.club)}` : ''].filter(Boolean);
+                const schedeCount = (loadPostureDB()[String(a.id)]?.sessioni || []).length;
+                return `<div class="ath-card" onclick="showAthleteDetail(${jsArg(a.id)})">
                     <div class="ath-card-top">
                         <div class="ath-avatar">${initials}</div>
                         <div class="ath-card-actions">
-                            <button class="ath-card-btn" onclick="event.stopPropagation();editAthlete('${a.id}')" title="Modifica"><i class="fas fa-edit"></i></button>
-                            <button class="ath-card-btn danger" onclick="event.stopPropagation();deleteAthlete('${a.id}')" title="Elimina"><i class="fas fa-trash"></i></button>
+                            <button class="ath-card-btn" onclick="event.stopPropagation();editAthlete(${jsArg(a.id)})" title="Modifica"><i class="fas fa-edit"></i></button>
+                            <button class="ath-card-btn danger" onclick="event.stopPropagation();deleteAthlete(${jsArg(a.id)})" title="Elimina"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
-                    <div class="ath-name">${a.surname} ${a.name}</div>
-                    ${a.dob ? `<div class="ath-meta">${new Date(a.dob).toLocaleDateString('it-IT')}${a.age ? ' · ' + a.age + ' anni' : ''}</div>` : ''}
+                    <div class="ath-name">${esc(a.surname)} ${esc(a.name)}</div>
+                    ${a.dob ? `<div class="ath-meta">${new Date(a.dob).toLocaleDateString('it-IT')}${age != null ? ' · ' + age + ' anni' : ''}</div>` : ''}
                     <div class="ath-tags">${tags.map(t => `<span class="ath-tag">${t}</span>`).join('')}</div>
                     <div class="ath-stats-strip">
-                        <div><div class="ast-val" style="color:var(--neon)">${a.peso ? a.peso + ' kg' : '—'}</div><div class="ast-lbl">peso</div></div>
-                        <div><div class="ast-val" style="color:var(--orange)">${a.altezza ? a.altezza + ' cm' : '—'}</div><div class="ast-lbl">altezza</div></div>
+                        <div><div class="ast-val" style="color:var(--neon)">${a.peso ? esc(a.peso) + ' kg' : '—'}</div><div class="ast-lbl">peso</div></div>
+                        <div><div class="ast-val" style="color:var(--orange)">${a.altezza ? esc(a.altezza) + ' cm' : '—'}</div><div class="ast-lbl">altezza</div></div>
                         <div><div class="ast-val" style="color:var(--green)">${schedeCount}</div><div class="ast-lbl">schede</div></div>
                     </div>
                 </div>`;
@@ -1648,16 +1605,17 @@
             if (!hid) { hid = document.createElement('input'); hid.type='hidden'; hid.id='detailAthleteId'; document.body.appendChild(hid); }
             hid.value = id;
 
-            const initials = (a.name[0]||'') + (a.surname[0]||'');
+            const initials = (a.name?.[0]||'') + (a.surname?.[0]||'');
             document.getElementById('detailAvatar').textContent = initials;
             document.getElementById('detailName').textContent = `${a.surname} ${a.name}`;
             document.getElementById('detailSub').textContent = [a.sport, a.ruolo, a.club].filter(Boolean).join(' · ') || 'Nessun dato sportivo';
 
-            const row = (k, v) => v ? `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>` : '';
+            const row = (k, v) => v ? `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${esc(v)}</span></div>` : '';
+            const age = calcAge(a.dob);
             document.getElementById('detailInfo').innerHTML =
                 `<div class="detail-card-title" style="color:var(--neon)">ANAGRAFICA</div>` +
                 row('Nato il', a.dob ? new Date(a.dob).toLocaleDateString('it-IT') : null) +
-                row('Età', a.age ? a.age + ' anni' : null) +
+                row('Età', age != null ? age + ' anni' : null) +
                 row('Sesso', a.sesso === 'M' ? 'Maschio' : a.sesso === 'F' ? 'Femmina' : null) +
                 row('Peso', a.peso ? a.peso + ' kg' : null) +
                 row('Altezza', a.altezza ? a.altezza + ' cm' : null) +
@@ -1670,7 +1628,7 @@
                 row('Ruolo', a.ruolo || null) +
                 row('Categoria', a.categoria || null) +
                 row('Club', a.club || null) +
-                (a.note ? `<div class="detail-note">📝 ${a.note}</div>` : '') +
+                (a.note ? `<div class="detail-note">📝 ${esc(a.note)}</div>` : '') +
                 ((!a.sport && !a.ruolo && !a.club && !a.note) ? '<div style="color:var(--text-3);font-size:0.82rem;padding:8px 0">Nessun dato inserito</div>' : '');
 
             // Legge sessioni dal nuovo formato
@@ -1694,9 +1652,9 @@
                            <span style="font-size:0.65rem;font-weight:700;color:var(--orange)">${nWarn} ATT</span>
                            <span style="font-size:0.65rem;font-weight:700;color:var(--red)">${nCrit} CRIT</span>`
                         : `<span style="font-size:0.65rem;color:var(--text-3)">Nessuna valutazione</span>`;
-                    return `<div class="scheda-item" style="cursor:pointer" onclick="loadScheda('${id}','${s.id}')">
+                    return `<div class="scheda-item" style="cursor:pointer" onclick="loadScheda(${jsArg(id)},${jsArg(s.id)})">
                         <div style="flex:1">
-                            <div class="scheda-date">${s.label || dateStr}</div>
+                            <div class="scheda-date">${esc(s.label || dateStr)}</div>
                             <div class="scheda-checks" style="display:flex;gap:8px;margin-top:3px">
                                 <span style="font-size:0.65rem;color:var(--text-3)">${fotos}/4 foto</span>
                                 ${badgesHtml}
@@ -1704,7 +1662,7 @@
                         </div>
                         <div style="display:flex;align-items:center;gap:8px">
                             <i class="fas fa-chevron-right" style="color:var(--text-3);font-size:0.8rem;"></i>
-                            <button onclick="event.stopPropagation();deleteSchedaFromDetail('${id}','${s.id}')"
+                            <button onclick="event.stopPropagation();deleteSchedaFromDetail(${jsArg(id)},${jsArg(s.id)})"
                                 style="background:none;border:none;cursor:pointer;color:var(--text-3);padding:4px 6px;border-radius:6px;transition:color .15s,background .15s"
                                 onmouseover="this.style.color='var(--red)';this.style.background='var(--red-dim)'"
                                 onmouseout="this.style.color='var(--text-3)';this.style.background='none'"
@@ -1747,7 +1705,7 @@
             const sel = document.getElementById('posturePlayerSelect');
             const sorted = [...players].sort((a, b) => (a.surname || '').localeCompare(b.surname || ''));
             sel.innerHTML = '<option value="">— Seleziona un atleta —</option>' +
-                sorted.map(p => `<option value="${p.id}">${p.surname} ${p.name}${p.sport ? ' · ' + p.sport : ''}${p.ruolo ? ' — ' + p.ruolo : ''}</option>`).join('');
+                sorted.map(p => `<option value="${esc(p.id)}">${esc(p.surname)} ${esc(p.name)}${p.sport ? ' · ' + esc(p.sport) : ''}${p.ruolo ? ' — ' + esc(p.ruolo) : ''}</option>`).join('');
             if (currentPosturePlayerId) sel.value = currentPosturePlayerId;
             updateAthBadge();
         }
@@ -1813,6 +1771,59 @@
         const jsonBlob = data => new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const today = () => new Date().toISOString().slice(0, 10);
 
+        // ─── Validazione dati importati ───
+        // Scarta record non validi e normalizza i tipi, così un file danneggiato
+        // o modificato a mano non può corrompere l'archivio.
+        const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+        const str   = v => (v == null || typeof v === 'object') ? '' : String(v).trim();
+        const num   = v => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : null; };
+        function sanitizeAthlete(a) {
+            if (!isObj(a) || a.id == null || !str(a.name) || !str(a.surname)) return null;
+            const peso = num(a.peso), altezza = num(a.altezza);
+            return {
+                id: str(a.id), name: str(a.name), surname: str(a.surname),
+                dob: /^\d{4}-\d{2}-\d{2}$/.test(str(a.dob)) ? str(a.dob) : '',
+                sesso: ['M', 'F'].includes(a.sesso) ? a.sesso : '',
+                peso, altezza,
+                bmi: peso && altezza ? +(peso / Math.pow(altezza / 100, 2)).toFixed(1) : null,
+                sport: str(a.sport), ruolo: str(a.ruolo), categoria: str(a.categoria), club: str(a.club), note: str(a.note),
+                createdAt: str(a.createdAt) || new Date().toISOString(),
+                schede: [],
+            };
+        }
+        function sanitizeAthletes(list) {
+            const seen = new Set();
+            return (Array.isArray(list) ? list : []).map(sanitizeAthlete).filter(a => a && !seen.has(a.id) && seen.add(a.id));
+        }
+        function sanitizeSession(sess) {
+            if (!isObj(sess) || sess.id == null) return null;
+            const photos = {}, lines = {};
+            POSTURE_VIEWS.forEach(v => {
+                const ph = sess.photos?.[v];
+                photos[v] = typeof ph === 'string' && ph.startsWith('data:image/') ? ph : null;
+                lines[v]  = (Array.isArray(sess.lines?.[v]) ? sess.lines[v] : []).filter(isObj).map(l => l.type === 'circle'
+                    ? { type: 'circle', cx: +l.cx || 50, cy: +l.cy || 50, size: +l.size || 60 }
+                    : { type: l.type === 'v' ? 'v' : 'h', pct: +l.pct || 50 });
+            });
+            const checks = {};
+            POSTURE_CHECKS.forEach(c => { const n = parseInt(sess.checks?.[c.id]); if (n >= 1 && n <= 10) checks[c.id] = n; });
+            return {
+                id: str(sess.id), data: str(sess.data) || new Date().toISOString(), label: str(sess.label) || 'Sessione',
+                lines, checks, notes: str(sess.notes), photos,
+            };
+        }
+        function sanitizePostureDB(db) {
+            const out = {};
+            if (!isObj(db)) return out;
+            for (const [pid, d] of Object.entries(db)) {
+                if (!isObj(d)) continue;
+                // Il vecchio formato (senza "sessioni") diventa una sessione
+                const list = Array.isArray(d.sessioni) ? d.sessioni : [{ id: 'sess_' + Date.now(), label: 'Sessione importata', ...d }];
+                out[String(pid)] = { sessioni: list.map(sanitizeSession).filter(Boolean) };
+            }
+            return out;
+        }
+
         // ─── Import / Export JSON ───
         function dbExport() {
             const data = { app: 'SPORTHUB-Posturale', version: '2.0', exportedAt: new Date().toISOString(), athletes: players, postureData: loadPostureDB() };
@@ -1827,14 +1838,14 @@
                 reader.onload = ev => {
                     try {
                         const data = JSON.parse(ev.target.result);
-                        const imported = data.athletes || (Array.isArray(data) ? data : null);
-                        if (!imported) { showToast('❌ File non valido', 'error'); return; }
+                        const imported = sanitizeAthletes(data.athletes || (Array.isArray(data) ? data : null));
+                        if (!imported.length) { showToast('❌ File non valido o senza atleti', 'error'); return; }
                         let added = 0;
                         imported.forEach(a => { if (!players.find(x => x.id === a.id)) { players.push(a); added++; } });
                         savePlayers(players);
                         if (data.postureData) {
                             const db = loadPostureDB();
-                            Object.assign(db, data.postureData);
+                            Object.assign(db, sanitizePostureDB(data.postureData));
                             savePostureDB(db);
                         }
                         updateAthBadge(); populatePosturePlayerSelect(); renderAthletes();
@@ -1846,15 +1857,6 @@
             input.click();
         }
 
-        // ─── Stubs vecchi (compatibilità) ───
-        function openPlayerModal() { showPage('atleti'); }
-        function closePlayerModal() {}
-        function openAddPlayerModal(editId) { if (editId) editAthlete(editId); else showPage_newAthlete(); }
-        function closeAddPlayerModal() { showPage('atleti'); }
-        function savePlayer() { saveAthlete(); }
-        function renderPlayersList() { renderAthletes(); }
-        function deletePlayer(id) { deleteAthlete(id); }
-        function editPlayer(id) { editAthlete(id); }
 
         // ═══════════════════════════════════════════════════
         // FORMATO UNIVERSALE — interoperabilità tra app
@@ -1944,6 +1946,7 @@
                         } else {
                             showToast('❌ Formato non riconosciuto', 'error'); return;
                         }
+                        source = sanitizeAthletes(source);
                         const current = loadPlayers();
                         let added = 0;
                         source.forEach(a => {
@@ -2239,7 +2242,7 @@
                     <div class="posture-check-label">${c.label}</div>
                     <div class="posture-check-slider-wrap">
                         <input type="range" min="1" max="10" step="1" value="${val}"
-                            class="posture-check-slider" id="chk_${c.id}"
+                            class="posture-check-slider" id="chk_${c.id}" aria-label="${c.label}"
                             style="accent-color:${color}"
                             oninput="updateCheckVal('${c.id}',this.value)">
                         <div class="posture-check-val" id="chkval_${c.id}"
@@ -2405,7 +2408,11 @@
             }, { passive: false });
 
             // Riposiziona se la finestra cambia dimensione
-            window.addEventListener('resize', applyPos);
+            // Rimosso da solo quando il cerchio non è più nella pagina
+            window.addEventListener('resize', function onResize() {
+                if (!circle.isConnected) window.removeEventListener('resize', onResize);
+                else applyPos();
+            });
 
             overlay.appendChild(circle);
         }
@@ -2428,7 +2435,31 @@
         // =========================================
         // SAVE
         // =========================================
+        // ── Salvataggio automatico della sessione aperta ──
+        // Ogni modifica (foto, linee, cerchi, valutazioni, note) viene salvata dopo 0,8 s.
+        let _autoSaveTimer = null;
+        function scheduleAutoSave() {
+            if (!currentPosturePlayerId) return;
+            clearTimeout(_autoSaveTimer);
+            _autoSaveTimer = setTimeout(() => savePostureData(true), 800);
+        }
+        function flushAutoSave() {
+            if (_autoSaveTimer) savePostureData(true);
+        }
+        function setupAutoSave() {
+            const root = document.getElementById('postureContent');
+            root.addEventListener('input', scheduleAutoSave);
+            root.addEventListener('change', scheduleAutoSave);
+            const mo = new MutationObserver(scheduleAutoSave);
+            POSTURE_VIEWS.forEach(v => {
+                mo.observe(document.getElementById('lines_' + v), { childList: true, subtree: true, attributes: true, attributeFilter: ['data-pct', 'data-cx', 'data-cy', 'data-size'] });
+                mo.observe(document.getElementById('photo_' + v), { attributes: true, attributeFilter: ['src'] });
+            });
+        }
+
         function savePostureData(silent = false) {
+            clearTimeout(_autoSaveTimer);
+            _autoSaveTimer = null;
             if (!currentPosturePlayerId) return;
             const atletaData = getAtletaData(String(currentPosturePlayerId));
             const idx = atletaData.sessioni.findIndex(s => s.id === currentSessionId);
@@ -3012,6 +3043,7 @@
             state.active = true;
 
             btn.classList.add('zoom-on');
+            btn.setAttribute('aria-pressed', 'true');
             wrap.classList.add('pan-zoom-active');
             pzApply(view);
 
@@ -3104,6 +3136,7 @@
             state.scale = 1; state.tx = 0; state.ty = 0;
             pzApply(view);
             btn.classList.remove('zoom-on');
+            btn.setAttribute('aria-pressed', 'false');
             wrap.classList.remove('pan-zoom-active', 'dragging');
             const h = wrap._pz;
             if (h) {
@@ -3268,14 +3301,14 @@
                     <div style="background:var(--bg-2);border:1px solid ${isCurrent?'var(--neon)':'var(--border)'};border-radius:10px;padding:12px 14px;${isCurrent?'box-shadow:0 0 0 2px rgba(0,210,255,0.15)':''}">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                             <div style="flex:1">
-                                <div style="font-size:0.82rem;font-weight:700;color:var(--text-1)">${s.label}${isCurrent?' <span style="font-size:0.65rem;color:var(--neon);font-weight:600">● corrente</span>':''}</div>
+                                <div style="font-size:0.82rem;font-weight:700;color:var(--text-1)">${esc(s.label)}${isCurrent?' <span style="font-size:0.65rem;color:var(--neon);font-weight:600">● corrente</span>':''}</div>
                                 <div style="font-size:0.7rem;color:var(--text-3);margin-top:1px">${dateStr} · ${fotos}/4 foto</div>
                             </div>
                             ${!isCurrent ? `
-                            <button class="btn btn-ghost" style="padding:4px 10px;font-size:0.72rem" onclick="loadSessione('${s.id}')">
+                            <button class="btn btn-ghost" style="padding:4px 10px;font-size:0.72rem" onclick="loadSessione(${jsArg(s.id)})">
                                 <i class="fas fa-eye"></i> Carica
                             </button>
-                            <button class="btn btn-ghost" style="padding:4px 8px;font-size:0.72rem;color:var(--red)" onclick="deleteSessione('${s.id}')">
+                            <button class="btn btn-ghost" style="padding:4px 8px;font-size:0.72rem;color:var(--red)" onclick="deleteSessione(${jsArg(s.id)})">
                                 <i class="fas fa-trash"></i>
                             </button>` : ''}
                         </div>
@@ -3402,17 +3435,29 @@
                 try {
                     const data = JSON.parse(e.target.result);
                     // Accetta sia "athletes" (formato dbExport) che "players" (formato vecchio)
-                    const atletiData = data.athletes || data.players;
-                    if (!atletiData || !Array.isArray(atletiData)) throw new Error('Formato non valido');
+                    const rawAtleti = data.athletes || data.players;
+                    if (!Array.isArray(rawAtleti)) throw new Error('Formato non valido');
+                    const atletiData = sanitizeAthletes(rawAtleti);
+                    if (!atletiData.length) throw new Error('Nessun atleta valido nel file');
+                    const scartati = rawAtleti.length - atletiData.length;
                     const exportDate = data.exportedAt || data.exported;
-                    if (!confirm(`Stai per ripristinare ${atletiData.length} atleti dal backup del ${formatBackupDate(exportDate)}.\n\nI dati attuali verranno sostituiti. Continuare?`)) return;
-                    // Con una cartella collegata, conserva una copia dei dati attuali prima di sostituirli
-                    if (Archivio.store?.saveFile && loadPlayers().length) {
-                        const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
-                        await Archivio.store.saveFile('backup', `prima_del_ripristino_${stamp}.json`, jsonBlob(backupPayload()));
+                    if (!confirm(`Stai per ripristinare ${atletiData.length} atleti dal backup del ${formatBackupDate(exportDate)}.${scartati ? `\n(${scartati} record non validi verranno ignorati)` : ''}\n\nI dati attuali verranno sostituiti. Continuare?`)) return;
+                    // Conserva una copia dei dati attuali prima di sostituirli
+                    if (loadPlayers().length) {
+                        try {
+                            if (Archivio.store?.saveFile) {
+                                const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+                                await Archivio.store.saveFile('backup', `prima_del_ripristino_${stamp}.json`, jsonBlob(backupPayload()));
+                            } else if (Archivio.store?.kind === 'browser') {
+                                await IDB.set({ preRestoreBackup: backupPayload() });
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            if (!confirm('Non è stato possibile salvare una copia dei dati attuali. Ripristinare comunque?')) return;
+                        }
                     }
                     savePlayers(atletiData);
-                    if (data.postureData) savePostureDB(data.postureData);
+                    if (data.postureData) savePostureDB(sanitizePostureDB(data.postureData));
                     players = loadPlayers();
                     renderAthletes(); populatePosturePlayerSelect(); updateAthBadge();
                     localStorage.setItem(BACKUP_KEY, new Date().toISOString());
@@ -3567,6 +3612,71 @@
         async function switchToBrowserStorage() { await useBrowserStorage(); afterStoreChange(); }
 
         // =========================================
+        // ACCESSIBILITÀ
+        // =========================================
+        const HEADINGS = [['.app-name', 1], ['.section-title', 2], ['.ath-page-title', 2], ['.form-page-title', 2], ['.modal-title', 2],
+                          ['.posture-block-title', 3], ['.form-section-title', 3], ['.detail-card-title', 3]];
+        function enhanceA11y(root) {
+            const all = sel => [...(root.matches?.(sel) ? [root] : []), ...root.querySelectorAll(sel)];
+            all('i.fas, i.fa').forEach(i => i.setAttribute('aria-hidden', 'true'));
+            all('button[title]:not([aria-label])').forEach(b => b.setAttribute('aria-label', b.title));
+            HEADINGS.forEach(([sel, level]) => all(sel).forEach(el => { el.setAttribute('role', 'heading'); el.setAttribute('aria-level', level); }));
+        }
+
+        const FOCUSABLE = 'button:not([disabled]), [href], input:not([type=hidden]):not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+        const MODAL_CANCEL = {
+            backupModal:     () => closeBackupModal(),
+            storicoModal:    () => closeStorico(),
+            pdfPreviewModal: () => document.getElementById('pdfPreviewCancel').click(),
+            saveReadyModal:  () => document.getElementById('saveReadyCancel').click(),
+            // setupModal: nessuna chiusura, serve una scelta
+        };
+        const visibleFocusables = el => [...el.querySelectorAll(FOCUSABLE)].filter(f => f.offsetParent !== null);
+        function topModal() {
+            return [...document.querySelectorAll('.modal-backdrop.active')]
+                .sort((a, b) => (parseInt(getComputedStyle(b).zIndex) || 0) - (parseInt(getComputedStyle(a).zIndex) || 0))[0];
+        }
+
+        function setupA11y() {
+            enhanceA11y(document.body);
+            new MutationObserver(muts => muts.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) enhanceA11y(n); })))
+                .observe(document.body, { childList: true, subtree: true });
+
+            // Finestre: focus all'apertura, ripristino alla chiusura
+            document.querySelectorAll('.modal-backdrop').forEach(modal => {
+                modal.setAttribute('role', 'dialog');
+                modal.setAttribute('aria-modal', 'true');
+                const title = modal.querySelector('.modal-title, [id$="Title"]');
+                if (title) { title.id ||= modal.id + 'Heading'; modal.setAttribute('aria-labelledby', title.id); }
+                new MutationObserver(() => {
+                    const open = modal.classList.contains('active');
+                    if (open && !modal._open) {
+                        modal._returnFocus = document.activeElement;
+                        requestAnimationFrame(() => visibleFocusables(modal)[0]?.focus());
+                    } else if (!open && modal._open) {
+                        modal._returnFocus?.focus?.();
+                    }
+                    modal._open = open;
+                }).observe(modal, { attributes: true, attributeFilter: ['class'] });
+            });
+
+            // Esc chiude la finestra in primo piano; Tab resta dentro la finestra
+            document.addEventListener('keydown', e => {
+                const modal = topModal();
+                if (!modal) return;
+                if (e.key === 'Escape' && MODAL_CANCEL[modal.id]) { e.preventDefault(); MODAL_CANCEL[modal.id](); }
+                if (e.key === 'Tab') {
+                    const f = visibleFocusables(modal);
+                    if (!f.length) return;
+                    const first = f[0], last = f[f.length - 1];
+                    if (!modal.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+                    else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+                }
+            });
+        }
+
+        // =========================================
         // INIT
         // =========================================
         async function initApp() {
@@ -3595,6 +3705,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            setupA11y();
+            setupAutoSave();
             initApp().catch(e => { console.error(e); showToast('Errore apertura archivio: ' + e.message, 'error'); });
             if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
                 const link = Object.assign(document.createElement('link'), { rel: 'manifest', href: 'manifest.webmanifest' });
@@ -3659,7 +3771,7 @@
                         <div style="font-size:0.72rem;color:var(--text-3)" id="backupStatsLine">—</div>
                     </div>
                 </div>
-                <button class="btn btn-ghost" style="padding:6px 10px" onclick="closeBackupModal()"><i class="fas fa-times"></i></button>
+                <button class="btn btn-ghost" style="padding:6px 10px" onclick="closeBackupModal()" aria-label="Chiudi"><i class="fas fa-times"></i></button>
             </div>
 
             <!-- Archivio dati -->
@@ -3724,7 +3836,7 @@
                         <div style="font-size:0.72rem;color:var(--text-3)" id="storicoAtletaName">—</div>
                     </div>
                 </div>
-                <button class="btn btn-ghost" style="padding:6px 10px" onclick="closeStorico()"><i class="fas fa-times"></i></button>
+                <button class="btn btn-ghost" style="padding:6px 10px" onclick="closeStorico()" aria-label="Chiudi"><i class="fas fa-times"></i></button>
             </div>
             <div id="storicoList" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;padding-right:4px"></div>
         </div>
