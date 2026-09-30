@@ -2621,60 +2621,86 @@
             // PAGINA 1 — Anagrafica + Checklist
             // ══════════════════════════════════════════
 
-            // ── Anagrafica ──
+            // Nuova pagina se lo spazio rimasto non basta (testi lunghi)
+            const PAGE_BOTTOM = doc.internal.pageSize.height - 16;
+            const ensureSpace = h => { if (y + h > PAGE_BOTTOM) { doc.addPage(); y = 18; } };
+
+            // ── Anagrafica completa ──
             if (p) {
                 const m=14, uw=182;
-                const age    = p.dob ? Math.floor((Date.now()-new Date(p.dob))/(1000*60*60*24*365.25)) : null;
+                const age    = calcAge(p.dob);
                 const dobStr = p.dob ? new Date(p.dob).toLocaleDateString('it-IT') : null;
+                const bmi    = p.bmi || ((p.peso && p.altezza) ? (p.peso / Math.pow(p.altezza / 100, 2)).toFixed(1) : null);
 
-                // Card contenitore
-                const cH = 26;
-                doc.setFillColor(248,251,255);
-                doc.setDrawColor(210,225,242); doc.setLineWidth(0.25);
-                doc.roundedRect(m, y, uw, cH, 3, 3, 'FD');
-                // Accent bar sinistra
+                // Header sezione (stesso stile di "Valutazione rapida")
+                doc.setFillColor(26,46,74);
+                doc.roundedRect(m, y, uw, 9, 2, 2, 'F');
                 doc.setFillColor(0,184,212);
-                doc.roundedRect(m, y, 3, cH, 1.5, 1.5, 'F');
-                doc.rect(m+1.5, y, 1.5, cH, 'F');
+                doc.rect(m, y, 2.5, 9, 'F');
+                doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+                doc.text('ANAGRAFICA', m+7, y+6);
+                y += 9;
 
-                // Avatar
-                const avX=m+13, avY=y+cH/2;
+                // Riga nome con avatar
+                const nameH = 15;
+                doc.setFillColor(248,251,255); doc.setDrawColor(228,235,244); doc.setLineWidth(0.15);
+                doc.rect(m, y, uw, nameH, 'FD');
+                const avX=m+9, avY=y+nameH/2;
                 doc.setFillColor(0,184,212);
-                doc.circle(avX, avY, 6, 'F');
+                doc.circle(avX, avY, 5, 'F');
                 doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont('helvetica','bold');
-                doc.text(((p.surname||'?')[0]+(p.name||'?')[0]).toUpperCase(), avX, avY+2.5, {align:'center'});
+                doc.text(((p.surname||'?')[0]+(p.name||'?')[0]).toUpperCase(), avX, avY+2.3, {align:'center'});
+                doc.setTextColor(13,31,53); doc.setFontSize(11); doc.setFont('helvetica','bold');
+                doc.text(`${(p.surname||'').toUpperCase()} ${p.name||''}`, m+18, avY+1.5, {maxWidth: uw-22});
+                y += nameH;
 
-                // Nome + sottotitolo (area centro, max 65mm per non toccare le pillole)
-                doc.setTextColor(13,31,53); doc.setFontSize(9.5); doc.setFont('helvetica','bold');
-                const fullName = `${(p.surname||'').toUpperCase()} ${p.name||''}`;
-                doc.text(fullName, m+23, y+9, {maxWidth:65});
-                const sub=[p.sport,p.ruolo,p.categoria,p.club].filter(Boolean).join('  ·  ');
-                if(sub){ doc.setTextColor(100,125,160); doc.setFontSize(6.5); doc.setFont('helvetica','normal'); doc.text(sub, m+23, y+16, {maxWidth:65}); }
+                // Griglia campi: 4 colonne, "—" per i dati mancanti
+                const fields = [
+                    ['Data di nascita', dobStr],
+                    ['Età',             age != null ? age + ' anni' : null],
+                    ['Sesso',           p.sesso === 'M' ? 'Maschio' : p.sesso === 'F' ? 'Femmina' : p.sesso],
+                    ['Peso',            p.peso ? p.peso + ' kg' : null],
+                    ['Altezza',         p.altezza ? p.altezza + ' cm' : null],
+                    ['BMI',             bmi ? String(bmi) : null],
+                    ['Sport',           p.sport],
+                    ['Ruolo / Specialità', p.ruolo],
+                    ['Categoria',       p.categoria],
+                    ['Club / Società',  p.club],
+                ];
+                const cols = 4, colW = uw / cols, rowH = 11;
+                const rows = Math.ceil(fields.length / cols);
+                for (let r = 0; r < rows; r++) {
+                    doc.setFillColor(...(r % 2 ? [247,250,253] : [255,255,255])); doc.setDrawColor(228,235,244);
+                    doc.rect(m, y, uw, rowH, 'FD');
+                    for (let c = 0; c < cols; c++) {
+                        const f = fields[r * cols + c]; if (!f) continue;
+                        const x = m + c * colW;
+                        if (c) doc.line(x, y, x, y + rowH);
+                        doc.setTextColor(120,145,170); doc.setFontSize(5.5); doc.setFont('helvetica','bold');
+                        doc.text(f[0].toUpperCase(), x + 3, y + 4.2);
+                        doc.setTextColor(...(f[1] ? [13,31,53] : [170,180,195])); doc.setFontSize(7.5); doc.setFont('helvetica', f[1] ? 'bold' : 'normal');
+                        doc.text(String(f[1] || '—'), x + 3, y + 8.8, {maxWidth: colW - 5});
+                    }
+                    y += rowH;
+                }
 
-                // Separatore verticale
-                doc.setDrawColor(210,225,242); doc.setLineWidth(0.2);
-                doc.line(m+92, y+3, m+92, y+cH-3);
+                // Note cliniche / Anamnesi dalla scheda atleta
+                const anamnesi = (p.note || '').trim();
+                doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+                const aLines = anamnesi ? doc.splitTextToSize(anamnesi, uw - 6) : ['—'];
+                const aH = 7 + aLines.length * 3.8 + 2;
+                ensureSpace(aH);
+                doc.setFillColor(255,255,255); doc.setDrawColor(228,235,244);
+                doc.rect(m, y, uw, aH, 'FD');
+                doc.setTextColor(120,145,170); doc.setFontSize(5.5); doc.setFont('helvetica','bold');
+                doc.text('NOTE CLINICHE / ANAMNESI', m + 3, y + 4.2);
+                doc.setTextColor(...(anamnesi ? [45,62,85] : [170,180,195])); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+                doc.text(aLines, m + 3, y + 8.8);
+                y += aH;
 
-                // Griglia dati fisici (2 colonne × 3 righe nella metà destra)
-                const fields=[];
-                if(dobStr)    fields.push({l:'Data nascita', v:dobStr+(age?'  ('+age+' anni)':'')});
-                if(p.sesso)   fields.push({l:'Sesso',        v:p.sesso==='M'?'Maschio':p.sesso==='F'?'Femmina':p.sesso});
-                if(p.peso)    fields.push({l:'Peso',         v:p.peso+' kg'});
-                if(p.altezza) fields.push({l:'Altezza',      v:p.altezza+' cm'});
-                if(p.bmi)     fields.push({l:'BMI',          v:String(p.bmi)});
-
-                const fColW=44, fGap=2;
-                const fStartX=m+95, fStartY=y+5;
-                fields.forEach((f,i)=>{
-                    const col=i%2, row=Math.floor(i/2);
-                    const fx=fStartX+col*(fColW+fGap), fy=fStartY+row*8;
-                    doc.setTextColor(120,145,170); doc.setFontSize(5.5); doc.setFont('helvetica','bold');
-                    doc.text(f.l.toUpperCase(), fx, fy);
-                    doc.setTextColor(13,31,53); doc.setFontSize(7); doc.setFont('helvetica','bold');
-                    doc.text(f.v, fx, fy+4.5);
-                });
-
-                y += cH + 6;
+                doc.setDrawColor(210,225,242); doc.setLineWidth(0.25);
+                doc.line(m, y, m + uw, y);
+                y += 6;
             }
 
             // ── Checklist ──
@@ -2684,6 +2710,7 @@
                 const cCol = v => v<=3?[10,124,64]:v<=6?[179,92,0]:[192,21,43];
                 const cBg  = v => v<=3?[237,250,243]:v<=6?[255,244,229]:[254,240,240];
                 const cLbl = v => v<=3?'Ottimo':v<=6?'Attenzione':'Critico';
+                ensureSpace(9 + Math.ceil(POSTURE_CHECKS.length / 2) * 9);
 
                 // Header sezione
                 doc.setFillColor(26,46,74);
@@ -2746,6 +2773,7 @@
                     doc.setFontSize(7.5); doc.setFont('helvetica','normal');
                     const noteLines = doc.splitTextToSize(notesVal, uwn-10);
                     const noteH = noteLines.length * 4.5 + 16;
+                    ensureSpace(noteH);
                     doc.setFillColor(245,249,255);
                     doc.setDrawColor(210,225,242); doc.setLineWidth(0.25);
                     doc.roundedRect(mn, y, uwn, noteH, 3, 3, 'FD');
