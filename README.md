@@ -4,7 +4,7 @@ App web per lo screening posturale visivo degli atleti: 4 foto (frontale, poster
 
 - **Misura angoli** (📐 su ogni foto): *Angolo* a 3 punti (es. ginocchio, gomito) o *Inclinazione* a 2 punti rispetto all'orizzontale/verticale (es. spalle, bacino). Tocca il valore per dare un nome alla misura.
 - **Rilevamento automatico dei punti** (📐 → *Rileva punti*): il modello MediaPipe Pose, eseguito sul dispositivo, propone spalle, bacino, testa, ginocchia e anca e crea le misure. Le misure automatiche hanno il bordo tratteggiato e nel PDF sono indicate come «Automatica»; trascinando un punto diventano «Automatica, corretta» e non vengono più sovrascritte. Il modello stima i centri articolari, non i reperi palpatori: i valori vanno sempre verificati. Funziona aprendo l'app dal link o installata (non dal file su disco); dopo il primo utilizzo anche offline.
-- **Valutazione rapida automatica**: i distretti si compilano dalle misure con lo stesso nome (Spalle, Bacino, Testa, Ginocchio DX/SX, Testa-spalla, Anca, Ginocchio). Spostando un cursore il distretto diventa manuale; «Tutti automatici» li riporta al calcolo. Le soglie si modificano dal pulsante *Soglie* (valgono sul dispositivo).
+- **Valutazione rapida automatica**: i distretti si compilano dalle misure con lo stesso nome (Spalle, Bacino, Testa, Ginocchio DX/SX, Testa-spalla, Anca, Ginocchio). Spostando un cursore il distretto diventa manuale; «Tutti automatici» li riporta al calcolo. Le soglie si modificano dal pulsante *Soglie* e si salvano nell'archivio dati (`impostazioni.json` nella cartella, oppure nella memoria dell'app) e nei backup.
 - **Cancella misure**: dal pulsante sopra le foto (tutta la sessione) o dal menu 📐 (una foto), solo misure angolari oppure anche linee e cerchi.
 - **Confronto sessioni**: foto *Prima/Dopo* affiancate o sovrapposte, variazioni della valutazione e degli angoli, PDF del confronto. Per confrontare un angolo tra due sessioni, dagli lo stesso nome in entrambe.
 
@@ -29,6 +29,7 @@ Struttura della cartella dati:
 
 ```
 atleti.json
+impostazioni.json
 sessioni/<id-atleta>.json
 foto/<id-atleta>/<id-sessione>_<vista>.jpg
 report/*.pdf

@@ -1150,6 +1150,10 @@
         function savePlayers(arr)  { _players = arr; Archivio.schedule(); }
         function loadPostureDB()   { return _postureDB; }
         function savePostureDB(db) { _postureDB = db; Archivio.schedule(); }
+        // Impostazioni dell'archivio (es. soglie della valutazione automatica): viaggiano con dati e backup
+        let _settings = {};
+        function loadSettings()    { return _settings; }
+        function saveSettings(obj) { _settings = obj; Archivio.schedule(); }
 
         const FS_SUPPORTED = 'showDirectoryPicker' in window;
         const IS_TOUCH     = window.matchMedia('(pointer: coarse)').matches;
@@ -1196,24 +1200,29 @@
         const BrowserStore = {
             kind: 'browser',
             async load() {
-                return { players: (await IDB.get('players')) || [], postureDB: (await IDB.get('postureDB')) || {} };
+                return { players: (await IDB.get('players')) || [], postureDB: (await IDB.get('postureDB')) || {}, settings: (await IDB.get('settings')) || {} };
             },
-            async save(players, postureDB) {
-                await IDB.set({ players, postureDB });
+            async save(players, postureDB, settings) {
+                await IDB.set({ players, postureDB, settings });
             },
         };
 
         const LegacyStore = {
             kind: 'legacy',
-            async load() { return readLegacyData(); },
-            async save(players, postureDB) {
+            async load() {
+                let settings = {};
+                try { settings = JSON.parse(localStorage.getItem('postura_settings') || '{}'); } catch {}
+                return { ...readLegacyData(), settings };
+            },
+            async save(players, postureDB, settings) {
                 localStorage.setItem('postura_players', JSON.stringify(players));
                 localStorage.setItem('postura_data', JSON.stringify(postureDB));
+                localStorage.setItem('postura_settings', JSON.stringify(settings || {}));
             },
         };
 
         // ── Cartella sul dispositivo ──
-        // <cartella>/atleti.json
+        // <cartella>/atleti.json      /impostazioni.json (soglie, ecc.)
         //           /sessioni/<idAtleta>.json          (foto sostituite dal percorso del file)
         //           /foto/<idAtleta>/<idSessione>_<vista>.jpg
         //           /report/*.pdf     /backup/*.json
@@ -1283,14 +1292,23 @@
                         delete data._pid;
                         postureDB[pid] = data;
                     }
-                    return { players, postureDB };
+                    const settingsTxt = await readText(dir, 'impostazioni.json');
+                    written.set('impostazioni.json', settingsTxt);
+                    let settings = {};
+                    try { settings = settingsTxt ? JSON.parse(settingsTxt) : {}; } catch (e) { console.warn('impostazioni.json non valido', e); }
+                    return { players, postureDB, settings };
                 },
 
-                async save(players, postureDB) {
+                async save(players, postureDB, settings) {
                     const atletiTxt = JSON.stringify(players, null, 2);
                     if (written.get('atleti.json') !== atletiTxt) {
                         await writeFile(dir, 'atleti.json', atletiTxt);
                         written.set('atleti.json', atletiTxt);
+                    }
+                    const settingsTxt = JSON.stringify(settings || {}, null, 2);
+                    if (written.get('impostazioni.json') !== settingsTxt) {
+                        await writeFile(dir, 'impostazioni.json', settingsTxt);
+                        written.set('impostazioni.json', settingsTxt);
                     }
                     const sessDir = await sub(dir, 'sessioni');
                     const fotoDir = await sub(dir, 'foto');
@@ -1368,7 +1386,7 @@
                 this.saving++;
                 const store = this.store;
                 this._chain = this._chain
-                    .then(() => store.save(_players, _postureDB))
+                    .then(() => store.save(_players, _postureDB, _settings))
                     .catch(err => {
                         console.error('Salvataggio non riuscito:', err);
                         this.pending = true;
@@ -1874,6 +1892,18 @@
                 schede: [],
             };
         }
+        function sanitizeSettings(st) {
+            const out = {};
+            if (!isObj(st)) return out;
+            if (isObj(st.soglie)) {
+                const soglie = {};
+                for (const [id, t] of Object.entries(st.soglie)) {
+                    if (isObj(t) && Number.isFinite(+t.ok) && Number.isFinite(+t.crit)) soglie[String(id)] = { ok: +t.ok, crit: +t.crit };
+                }
+                out.soglie = soglie;
+            }
+            return out;
+        }
         function sanitizeAthletes(list) {
             const seen = new Set();
             return (Array.isArray(list) ? list : []).map(sanitizeAthlete).filter(a => a && !seen.has(a.id) && seen.add(a.id));
@@ -1916,7 +1946,7 @@
 
         // ─── Import / Export JSON ───
         function dbExport() {
-            const data = { app: 'SPORTHUB-Posturale', version: '2.0', exportedAt: new Date().toISOString(), athletes: players, postureData: loadPostureDB() };
+            const data = { app: 'SPORTHUB-Posturale', version: '2.0', exportedAt: new Date().toISOString(), athletes: players, postureData: loadPostureDB(), settings: loadSettings() };
             saveToDevice(jsonBlob(data), 'posturale_backup_' + today() + '.json', 'backup');
         }
         function dbImport() {
@@ -2981,12 +3011,11 @@
             { id: 'anca_lat',    label: 'Anca laterale — scostamento da 180°',    names: ['Anca'],          views: ['dx', 'sx'],      district: () => 'hips',      dev: d => Math.abs(180 - d), ok: 5, crit: 10 },
             { id: 'testa_spalla', label: 'Testa-spalla — angolo (basso = testa avanti)', names: ['Testa-spalla'], views: ['dx', 'sx'], district: () => 'head', dev: d => d, ok: 50, crit: 45, reverse: true },
         ];
-        const THRESH_KEY = 'postura_soglie';
+        const THRESH_KEY = 'postura_soglie';   // solo per migrare le soglie salvate sul dispositivo
         let checkSource = {};
 
         function getThresholds() {
-            let saved = {};
-            try { saved = JSON.parse(localStorage.getItem(THRESH_KEY) || '{}'); } catch {}
+            const saved = loadSettings().soglie || {};
             return Object.fromEntries(CHECK_RULES.map(r => {
                 const t = saved[r.id];
                 return [r.id, t && Number.isFinite(+t.ok) && Number.isFinite(+t.crit) ? { ok: +t.ok, crit: +t.crit } : { ok: r.ok, crit: r.crit }];
@@ -3085,13 +3114,14 @@
                 }
                 out[r.id] = { ok, crit };
             }
-            try { localStorage.setItem(THRESH_KEY, JSON.stringify(out)); } catch {}
+            saveSettings({ ...loadSettings(), soglie: out });
             closeThresholds();
             applyAutoChecks();
             showToast('Soglie salvate');
         }
         function resetThresholds() {
-            try { localStorage.removeItem(THRESH_KEY); } catch {}
+            const { soglie, ...rest } = loadSettings();
+            saveSettings(rest);
             openThresholds();
             applyAutoChecks();
         }
@@ -4162,7 +4192,7 @@
             return {
                 version: 1, exported: new Date().toISOString(),
                 app: 'SPORTHUB Posturale',
-                athletes: loadPlayers(), postureData: loadPostureDB()
+                athletes: loadPlayers(), postureData: loadPostureDB(), settings: loadSettings()
             };
         }
 
@@ -4205,6 +4235,7 @@
                     }
                     savePlayers(atletiData);
                     if (data.postureData) savePostureDB(sanitizePostureDB(data.postureData));
+                    if (data.settings) saveSettings(sanitizeSettings(data.settings));
                     players = loadPlayers();
                     renderAthletes(); populatePosturePlayerSelect(); updateAthBadge();
                     localStorage.setItem(BACKUP_KEY, new Date().toISOString());
@@ -4236,6 +4267,7 @@
                 const data = carry || await store.load();
                 _players   = data.players;
                 _postureDB = data.postureDB;
+                _settings  = sanitizeSettings(data.settings);
                 Archivio.store = store;
                 if (carry) { Archivio.pending = true; await Archivio.flush(); }
                 if (store.kind === 'browser') navigator.storage?.persist?.().catch(() => {});
@@ -4254,6 +4286,12 @@
         }
 
         function afterStoreChange() {
+            // Soglie salvate in precedenza solo su questo dispositivo → spostate nell'archivio
+            try {
+                const local = localStorage.getItem(THRESH_KEY);
+                if (local && !loadSettings().soglie) saveSettings(sanitizeSettings({ ...loadSettings(), soglie: JSON.parse(local) }));
+                if (local) localStorage.removeItem(THRESH_KEY);
+            } catch {}
             players = loadPlayers();
             populatePosturePlayerSelect();
             updateAthBadge();
@@ -4276,7 +4314,7 @@
                     if (current && !confirm(`La cartella «${dir.name}» contiene già un archivio con ${existing.players.length} atleti.\n\nVuoi aprire quell'archivio? I dati attuali restano dove sono.`)) return false;
                     await activateStore(store);
                 } else {
-                    const carry = Archivio.store ? { players: _players, postureDB: _postureDB } : (pendingLegacyData() || { players: [], postureDB: {} });
+                    const carry = Archivio.store ? { players: _players, postureDB: _postureDB, settings: _settings } : (pendingLegacyData() || { players: [], postureDB: {} });
                     await activateStore(store, carry);
                     markLegacyMigrated();
                 }
@@ -4292,7 +4330,7 @@
         async function useBrowserStorage() {
             if (Archivio.store?.kind === 'folder' &&
                 !confirm('I dati verranno copiati nella memoria interna dell\'app su questo dispositivo e la cartella non verrà più aggiornata. Continuare?')) return;
-            const carry = Archivio.store ? { players: _players, postureDB: _postureDB } : pendingLegacyData();
+            const carry = Archivio.store ? { players: _players, postureDB: _postureDB, settings: _settings } : pendingLegacyData();
             await activateStore(BrowserStore, carry || undefined);
             if (carry) markLegacyMigrated();
         }
@@ -4715,7 +4753,7 @@
                 <div class="modal-title" style="font-size:1.2rem;margin-bottom:0;flex:1">Soglie valutazione automatica</div>
                 <button class="btn btn-ghost" style="padding:6px 10px" onclick="closeThresholds()" aria-label="Chiudi"><i class="fas fa-times"></i></button>
             </div>
-            <p style="color:var(--text-3);font-size:0.78rem;line-height:1.6;margin-bottom:12px">Fino a «Ottimo» il punteggio è 1–3, fino a «Critico» 4–6, oltre 7–10. Sono valori indicativi predefiniti: adattali al tuo protocollo. Valgono su questo dispositivo.</p>
+            <p style="color:var(--text-3);font-size:0.78rem;line-height:1.6;margin-bottom:12px">Fino a «Ottimo» il punteggio è 1–3, fino a «Critico» 4–6, oltre 7–10. Sono valori indicativi predefiniti: adattali al tuo protocollo. Si salvano nell'archivio dati (cartella o memoria dell'app) e sono inclusi nei backup.</p>
             <table class="cmp-table" id="thresholdsTable"></table>
             <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap">
                 <button class="btn btn-ghost" onclick="resetThresholds()">Ripristina predefinite</button>
