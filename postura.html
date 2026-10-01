@@ -795,6 +795,22 @@
         #sessionControls { flex-wrap: wrap; justify-content: flex-end; max-width: 100%; }
         @media (max-width: 600px) { #sessionControls .btn { padding: 8px 10px; font-size: 0.78rem; } }
 
+        /* CANCELLA MISURE / VALUTAZIONE AUTOMATICA */
+        .posture-toolbar { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+        .posture-toolbar .btn { padding: 8px 12px; font-size: 0.8rem; }
+        .btn-danger-ghost:hover { color: var(--red); border-color: var(--red); }
+        .session-info { font-size: 0.78rem; color: var(--text-2); margin-top: 6px; }
+        .session-info.old { color: var(--orange); }
+        .check-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+        .check-head .posture-block-title { flex: 1; }
+        .check-head-btn { padding: 5px 10px; font-size: 0.72rem; }
+        .check-help { font-size: 0.74rem; color: var(--text-3); margin-bottom: 12px; line-height: 1.5; }
+        .posture-check-item { flex-wrap: wrap; }
+        .check-src { flex-basis: 100%; font-size: 0.68rem; color: var(--text-3); display: flex; gap: 6px; align-items: center; margin-top: -2px; }
+        .check-src.auto { color: var(--neon); }
+        .check-src button { background: none; border: none; color: var(--neon); cursor: pointer; font-size: 0.68rem; padding: 0; text-decoration: underline; }
+        #thresholdsTable input { width: 64px; background: var(--bg-2); color: var(--text-1); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; font: 600 0.8rem var(--font-mono); text-align: right; }
+
         /* CONFRONTO */
         .compare-box { max-width: 1100px; max-height: 94vh; overflow-y: auto; overflow-x: hidden; padding: 20px; min-width: 0; }
         .compare-controls > * { min-width: 0; max-width: 100%; }
@@ -912,6 +928,7 @@
             <div>
                 <div class="section-title"><i class="fas fa-child" style="font-size:1.8rem;margin-right:12px;vertical-align:middle;color:var(--neon)"></i>Analisi Posturale</div>
                 <div class="section-sub">Screening visivo per atleta — non sostituisce la valutazione specialistica</div>
+                <div class="session-info" id="sessionInfo"></div>
             </div>
         </div>
 
@@ -926,11 +943,20 @@
         <!-- POSTURE CONTENT -->
         <div id="postureContent" style="display:none;">
             <!-- 4 card foto + linee guida -->
+            <div class="posture-toolbar">
+                <button class="btn btn-ghost" onclick="runAutoDetect(POSTURE_VIEWS)"><i class="fas fa-magic"></i> Rileva punti su tutte le foto</button>
+                <button class="btn btn-ghost btn-danger-ghost" onclick="openClearMeasures()"><i class="fas fa-eraser"></i> Cancella misure</button>
+            </div>
             <div class="posture-cards-grid" id="postureCardsGrid"><!-- generate da renderPostureCards() --></div>
 
             <!-- Checklist valutazione -->
             <div class="posture-block">
-                <div class="posture-block-title"><i class="fas fa-clipboard-check" style="margin-right:6px"></i>Valutazione Rapida</div>
+                <div class="check-head">
+                    <div class="posture-block-title" style="margin-bottom:0"><i class="fas fa-clipboard-check" style="margin-right:6px"></i>Valutazione Rapida</div>
+                    <button class="btn btn-ghost check-head-btn" onclick="applyAutoAll()" title="Riporta tutti i distretti ai valori calcolati dalle misure"><i class="fas fa-sync-alt"></i> Tutti automatici</button>
+                    <button class="btn btn-ghost check-head-btn" onclick="openThresholds()" title="Soglie usate per il calcolo automatico"><i class="fas fa-sliders-h"></i> Soglie</button>
+                </div>
+                <p class="check-help">I valori si calcolano dalle misure con lo stesso nome (Spalle, Bacino, Testa, Ginocchio DX/SX, Testa-spalla, Anca, Ginocchio). Spostando un cursore il distretto diventa manuale. Colonna e caviglie si valutano a mano.</p>
                 <div class="posture-check-grid" id="postureChecklistGrid"></div>
             </div>
 
@@ -1873,6 +1899,7 @@
             return {
                 id: str(sess.id), data: str(sess.data) || new Date().toISOString(), label: str(sess.label) || 'Sessione',
                 lines, checks, notes: str(sess.notes), photos,
+                ...(isObj(sess.checkSource) ? { checkSource: Object.fromEntries(POSTURE_CHECKS.map(c => [c.id, sess.checkSource[c.id] === 'manual' ? 'manual' : 'auto'])) } : {}),
             };
         }
         function sanitizePostureDB(db) {
@@ -2301,7 +2328,9 @@
             if (v <= 6) return '⚠ Attenzione';
             return '✕ Critico';
         }
-        function renderPostureChecklist(saved) {
+        function renderPostureChecklist(saved, source) {
+            // source: { id: 'auto' | 'manual' }; null = sessione precedente a questa funzione → tutto manuale
+            checkSource = source ? { ...source } : Object.fromEntries(POSTURE_CHECKS.map(c => [c.id, 'manual']));
             document.getElementById('postureChecklistGrid').innerHTML = POSTURE_CHECKS.map(c => {
                 const val = saved?.[c.id] ?? 1;
                 const color = _checkColor(val);
@@ -2311,12 +2340,20 @@
                         <input type="range" min="1" max="10" step="1" value="${val}"
                             class="posture-check-slider" id="chk_${c.id}" aria-label="${c.label}"
                             style="accent-color:${color}"
-                            oninput="updateCheckVal('${c.id}',this.value)">
+                            oninput="onCheckInput('${c.id}',this.value)">
                         <div class="posture-check-val" id="chkval_${c.id}"
                             style="color:${color};border-color:${color}40">${val}</div>
                     </div>
+                    <div class="check-src" id="chksrc_${c.id}"></div>
                 </div>`;
             }).join('');
+            scheduleAutoChecks();
+        }
+        // Cursore spostato a mano: il distretto diventa manuale
+        function onCheckInput(id, v) {
+            checkSource[id] = 'manual';
+            updateCheckVal(id, v);
+            scheduleAutoChecks();
         }
         function updateCheckVal(id, v) {
             v = parseInt(v);
@@ -2663,6 +2700,7 @@
             const ov = document.getElementById('lines_' + view);
             const cv = document.getElementById('angleCanvas_' + view);
             if (!ov || !cv) return;
+            scheduleAutoChecks();
             const f = angleFrame(view);
             const dpr = window.devicePixelRatio || 1;
             cv.width = Math.round(ov.clientWidth * dpr); cv.height = Math.round(ov.clientHeight * dpr);
@@ -2785,10 +2823,13 @@
                 <button role="menuitem" data-k="tilt"><i class="fas fa-ruler-horizontal"></i><span>Inclinazione<br><small>2 punti: es. spalle, bacino</small></span></button>
                 <hr>
                 <button role="menuitem" data-auto="one"><i class="fas fa-magic"></i><span>Rileva punti automaticamente<br><small>su questa foto, da controllare</small></span></button>
-                <button role="menuitem" data-auto="all"><i class="fas fa-magic"></i><span>Rileva su tutte le foto</span></button>`;
+                <button role="menuitem" data-auto="all"><i class="fas fa-magic"></i><span>Rileva su tutte le foto</span></button>
+                <hr>
+                <button role="menuitem" data-clear="1"><i class="fas fa-eraser"></i><span>Cancella misure di questa foto</span></button>`;
             menu.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
                 closeAngleMenu();
-                if (b.dataset.auto) runAutoDetect(b.dataset.auto === 'all' ? POSTURE_VIEWS : [view]);
+                if (b.dataset.clear) openClearMeasures([view]);
+                else if (b.dataset.auto) runAutoDetect(b.dataset.auto === 'all' ? POSTURE_VIEWS : [view]);
                 else addPostureAngle(view, b.dataset.k);
             }));
             btn.closest('.posture-card-title').appendChild(menu);
@@ -2926,6 +2967,170 @@
         }
 
         // =========================================
+        // VALUTAZIONE RAPIDA AUTOMATICA DALLE MISURE
+        // =========================================
+        // Ogni regola collega le misure con un certo nome a un distretto. La deviazione (in gradi)
+        // diventa un punteggio: fino a «ok» 1–3 (Ottimo), fino a «crit» 4–6 (Attenzione), oltre 7–10.
+        // reverse: valori ALTI sono migliori (es. angolo testa-spalla).
+        const CHECK_RULES = [
+            { id: 'spalle',      label: 'Spalle — inclinazione',                  names: ['Spalle'],        views: ['front', 'back'], district: () => 'shoulders', dev: d => d,                 ok: 2, crit: 4 },
+            { id: 'bacino',      label: 'Bacino — inclinazione',                  names: ['Bacino'],        views: ['front', 'back'], district: () => 'hips',      dev: d => d,                 ok: 2, crit: 4 },
+            { id: 'testa',       label: 'Testa — inclinazione frontale',          names: ['Testa'],         views: ['front', 'back'], district: () => 'head',      dev: d => d,                 ok: 3, crit: 6 },
+            { id: 'gin_front',   label: 'Ginocchio frontale — scostamento da 180°', names: ['Ginocchio DX', 'Ginocchio SX'], views: ['front', 'back'], district: (v, n) => n.endsWith('DX') ? 'knee_dx' : 'knee_sx', dev: d => Math.abs(180 - d), ok: 5, crit: 10 },
+            { id: 'gin_lat',     label: 'Ginocchio laterale — scostamento da 180°', names: ['Ginocchio'],   views: ['dx', 'sx'],      district: v => v === 'dx' ? 'knee_dx' : 'knee_sx', dev: d => Math.abs(180 - d), ok: 5, crit: 10 },
+            { id: 'anca_lat',    label: 'Anca laterale — scostamento da 180°',    names: ['Anca'],          views: ['dx', 'sx'],      district: () => 'hips',      dev: d => Math.abs(180 - d), ok: 5, crit: 10 },
+            { id: 'testa_spalla', label: 'Testa-spalla — angolo (basso = testa avanti)', names: ['Testa-spalla'], views: ['dx', 'sx'], district: () => 'head', dev: d => d, ok: 50, crit: 45, reverse: true },
+        ];
+        const THRESH_KEY = 'postura_soglie';
+        let checkSource = {};
+
+        function getThresholds() {
+            let saved = {};
+            try { saved = JSON.parse(localStorage.getItem(THRESH_KEY) || '{}'); } catch {}
+            return Object.fromEntries(CHECK_RULES.map(r => {
+                const t = saved[r.id];
+                return [r.id, t && Number.isFinite(+t.ok) && Number.isFinite(+t.crit) ? { ok: +t.ok, crit: +t.crit } : { ok: r.ok, crit: r.crit }];
+            }));
+        }
+
+        function scoreFor(rule, value, t) {
+            if (rule.reverse) {
+                const span = Math.max(0.1, t.ok - t.crit);
+                if (value >= t.ok) return value >= t.ok + span ? 1 : value >= t.ok + span / 2 ? 2 : 3;
+                if (value >= t.crit) return 4 + Math.round(2 * (t.ok - value) / span);
+                return Math.min(10, 7 + Math.round(3 * (t.crit - value) / span));
+            }
+            const d = rule.dev(value), span = Math.max(0.1, t.crit - t.ok);
+            if (d <= t.ok) return 1 + Math.round(2 * d / Math.max(0.1, t.ok));
+            if (d <= t.crit) return 4 + Math.round(2 * (d - t.ok) / span);
+            return Math.min(10, 7 + Math.round(3 * (d - t.crit) / span));
+        }
+
+        // Punteggio per distretto dalle misure presenti nelle foto (il peggiore, se più misure)
+        function computeAutoChecks() {
+            const t = getThresholds(), out = {};
+            POSTURE_VIEWS.forEach(v => {
+                const f = angleFrame(v);
+                if (!f) return;
+                document.querySelectorAll(`#lines_${v} .posture-angle`).forEach(el => {
+                    const a = angleData(el);
+                    const rule = CHECK_RULES.find(r => r.views.includes(v) && r.names.includes(a.name));
+                    if (!rule) return;
+                    const val = angleValue(a.kind, a.pts, f.natW, f.natH).deg;
+                    const district = rule.district(v, a.name);
+                    const score = scoreFor(rule, val, t[rule.id]);
+                    const src = `${a.name} ${val.toFixed(1)}° (${VIEW_LABELS[v]})`;
+                    if (!out[district] || score > out[district].score) out[district] = { score, src };
+                });
+            });
+            return out;
+        }
+
+        let _autoChecksQueued = false;
+        function scheduleAutoChecks() {
+            if (_autoChecksQueued) return;
+            _autoChecksQueued = true;
+            requestAnimationFrame(() => { _autoChecksQueued = false; applyAutoChecks(); });
+        }
+        function applyAutoChecks() {
+            if (!document.getElementById('chk_shoulders')) return;
+            const auto = computeAutoChecks();
+            let changed = false;
+            POSTURE_CHECKS.forEach(c => {
+                const a = auto[c.id], slider = document.getElementById('chk_' + c.id), info = document.getElementById('chksrc_' + c.id);
+                const isAuto = checkSource[c.id] !== 'manual';
+                if (a && isAuto && +slider.value !== a.score) { slider.value = a.score; updateCheckVal(c.id, a.score); changed = true; }
+                info.className = 'check-src' + (a && isAuto ? ' auto' : '');
+                info.replaceChildren();
+                if (!a) return;
+                if (isAuto) info.textContent = `Automatico · ${a.src}`;
+                else {
+                    info.append(`Manuale · misura: ${a.src} → ${a.score} `);
+                    const b = document.createElement('button');
+                    b.textContent = 'usa automatico';
+                    b.onclick = () => { checkSource[c.id] = 'auto'; applyAutoChecks(); scheduleAutoSave(); };
+                    info.append(b);
+                }
+            });
+            if (changed) scheduleAutoSave();
+        }
+        function applyAutoAll() {
+            POSTURE_CHECKS.forEach(c => { checkSource[c.id] = 'auto'; });
+            applyAutoChecks();
+            scheduleAutoSave();
+            const n = Object.keys(computeAutoChecks()).length;
+            showToast(n ? `${n} distretti calcolati dalle misure` : 'Nessuna misura collegata ai distretti', n ? 'success' : 'error');
+        }
+        const collectCheckSource = () => ({ ...checkSource });
+
+        // ── Soglie ──
+        function openThresholds() {
+            const t = getThresholds();
+            document.getElementById('thresholdsTable').innerHTML =
+                `<thead><tr><th>Misura</th><th class="num">Ottimo</th><th class="num">Critico</th></tr></thead><tbody>` +
+                CHECK_RULES.map(r => `<tr><td>${r.label}</td>
+                    <td class="num">${r.reverse ? '≥' : '≤'} <input type="number" step="0.5" min="0" max="180" data-rule="${r.id}" data-k="ok" value="${t[r.id].ok}" aria-label="${r.label}: soglia Ottimo">°</td>
+                    <td class="num">${r.reverse ? '<' : '>'} <input type="number" step="0.5" min="0" max="180" data-rule="${r.id}" data-k="crit" value="${t[r.id].crit}" aria-label="${r.label}: soglia Critico">°</td></tr>`).join('') + `</tbody>`;
+            document.getElementById('thresholdsModal').classList.add('active');
+        }
+        function closeThresholds() { document.getElementById('thresholdsModal').classList.remove('active'); }
+        function saveThresholds() {
+            const out = {};
+            for (const r of CHECK_RULES) {
+                const ok = parseFloat(document.querySelector(`#thresholdsTable input[data-rule="${r.id}"][data-k="ok"]`).value);
+                const crit = parseFloat(document.querySelector(`#thresholdsTable input[data-rule="${r.id}"][data-k="crit"]`).value);
+                if (!Number.isFinite(ok) || !Number.isFinite(crit) || (r.reverse ? crit >= ok : crit <= ok)) {
+                    showToast(`${r.label}: la soglia Critico deve essere ${r.reverse ? 'più bassa' : 'più alta'} di Ottimo`, 'error', 5000);
+                    return;
+                }
+                out[r.id] = { ok, crit };
+            }
+            try { localStorage.setItem(THRESH_KEY, JSON.stringify(out)); } catch {}
+            closeThresholds();
+            applyAutoChecks();
+            showToast('Soglie salvate');
+        }
+        function resetThresholds() {
+            try { localStorage.removeItem(THRESH_KEY); } catch {}
+            openThresholds();
+            applyAutoChecks();
+        }
+
+        // =========================================
+        // CANCELLA MISURE
+        // =========================================
+        let _clearViews = POSTURE_VIEWS;
+        function openClearMeasures(views = POSTURE_VIEWS) {
+            const count = sel => views.reduce((t, v) => t + document.querySelectorAll(`#lines_${v} ${sel}`).length, 0);
+            const nAngles = count('.posture-angle'), nOther = count('.posture-guide-line, .posture-circle');
+            if (!nAngles && !nOther) { showToast('Non ci sono misure da cancellare', 'error'); return; }
+            _clearViews = views;
+            const where = views.length === 1 ? `dalla foto ${VIEW_LABELS[views[0]]}` : 'da tutte le foto di questa sessione';
+            const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+            document.getElementById('clearText').textContent =
+                `Verranno eliminate ${where}: ${plural(nAngles, 'misura angolare', 'misure angolari')}` +
+                (nOther ? ` e, se scegli la seconda opzione, ${plural(nOther, 'tra linee guida e cerchi', 'tra linee guida e cerchi')}.` : '.') +
+                ' L\'operazione non si può annullare. Le foto restano.';
+            document.getElementById('clearAll').style.display = nOther ? '' : 'none';
+            document.getElementById('clearAngles').disabled = !nAngles;
+            document.getElementById('clearAngles').onclick = () => clearMeasures(false);
+            document.getElementById('clearAll').onclick = () => clearMeasures(true);
+            document.getElementById('clearModal').classList.add('active');
+        }
+        function closeClearMeasures() { document.getElementById('clearModal').classList.remove('active'); }
+        function clearMeasures(all) {
+            let n = 0;
+            _clearViews.forEach(v => {
+                document.querySelectorAll(`#lines_${v} .posture-angle${all ? ', #lines_' + v + ' .posture-guide-line, #lines_' + v + ' .posture-circle' : ''}`)
+                    .forEach(el => { el.remove(); n++; });
+                refreshAngles(v);
+            });
+            closeClearMeasures();
+            savePostureData(true);
+            showToast(n === 1 ? '1 elemento eliminato' : `${n} elementi eliminati`);
+        }
+
+        // =========================================
         // SAVE
         // =========================================
         // ── Salvataggio automatico della sessione aperta ──
@@ -2963,6 +3168,7 @@
                                  : new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}),
                 lines:  collectPostureLines(),
                 checks: collectPostureChecks(),
+                checkSource: collectCheckSource(),
                 notes:  document.getElementById('postureNotesText').value,
                 photos: collectPosturePhotos()
             };
@@ -3237,6 +3443,7 @@
             {
                 const m=14, uw=182;
                 const liveChecks = collectPostureChecks();
+                const autoChecks = computeAutoChecks();
                 const cCol = v => v<=3?[10,124,64]:v<=6?[179,92,0]:[192,21,43];
                 const cBg  = v => v<=3?[237,250,243]:v<=6?[255,244,229]:[254,240,240];
                 const cLbl = v => v<=3?'Ottimo':v<=6?'Attenzione':'Critico';
@@ -3276,6 +3483,10 @@
                         // Label
                         doc.setTextColor(45,62,85); doc.setFontSize(7); doc.setFont('helvetica','normal');
                         doc.text(c.label, x+3, y+6);
+                        if (checkSource[c.id] !== 'manual' && autoChecks[c.id]) {
+                            doc.setTextColor(0,150,190); doc.setFontSize(5.5);
+                            doc.text('auto', x+3+doc.getStringUnitWidth(c.label)*7/doc.internal.scaleFactor+2, y+6);
+                        }
                         // Valore numerico
                         doc.setTextColor(...cCol(v)); doc.setFontSize(8); doc.setFont('helvetica','bold');
                         doc.text(String(v), x+half-30, y+6.5);
@@ -3762,6 +3973,7 @@
                 label:  new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'long',year:'numeric'}),
                 lines:  {front:[],back:[],dx:[],sx:[]},
                 checks: {},
+                checkSource: {},
                 notes:  '',
                 photos: {front:null,back:null,dx:null,sx:null}
             };
@@ -3785,7 +3997,8 @@
             saveAtletaData(String(currentPosturePlayerId), data);
             currentSessionId = sess.id;
             POSTURE_VIEWS.forEach(v => clearPosturePhotoUI(v));
-            renderPostureChecklist({});
+            renderPostureChecklist({}, {});
+            showSessionInfo(sess);
             document.getElementById('postureNotesText').value = '';
             POSTURE_VIEWS.forEach(v => renderPostureLines(v, []));
             updateStats();
@@ -3872,8 +4085,18 @@
             showToast('Sessione eliminata', 'error');
         }
 
+        // Data della sessione aperta; se non è di oggi suggerisce «Nuova Sessione»
+        function showSessionInfo(sess) {
+            const el = document.getElementById('sessionInfo');
+            if (!el || !sess) return;
+            const isToday = new Date(sess.data).toDateString() === new Date().toDateString();
+            el.className = 'session-info' + (isToday ? '' : ' old');
+            el.textContent = `Sessione aperta: ${sessionTitle(sess)}` + (isToday ? '' : ' — per una nuova valutazione usa «Nuova Sessione»');
+        }
+
         function _applySessioneToUI(sess) {
-            renderPostureChecklist(sess.checks || {});
+            renderPostureChecklist(sess.checks || {}, sess.checkSource || null);
+            showSessionInfo(sess);
             document.getElementById('postureNotesText').value = sess.notes || '';
             POSTURE_VIEWS.forEach(v => {
                 sess.photos?.[v] ? setPosturePhoto(v, sess.photos[v]) : clearPosturePhotoUI(v);
@@ -4363,6 +4586,8 @@
             backupModal:     () => closeBackupModal(),
             storicoModal:    () => closeStorico(),
             compareModal:    () => closeCompare(),
+            clearModal:      () => closeClearMeasures(),
+            thresholdsModal: () => closeThresholds(),
             pdfPreviewModal: () => document.getElementById('pdfPreviewCancel').click(),
             saveReadyModal:  () => document.getElementById('saveReadyCancel').click(),
             // setupModal: nessuna chiusura, serve una scelta
@@ -4465,6 +4690,37 @@
             <div class="modal-title" style="font-size:1.3rem;margin-bottom:10px" id="setupTitle">Archivio dati</div>
             <p style="color:var(--text-2);font-size:0.85rem;line-height:1.7;margin-bottom:22px" id="setupText"></p>
             <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap" id="setupActions"></div>
+        </div>
+    </div>
+
+    <!-- ══ MODAL CANCELLA MISURE ══ -->
+    <div class="modal-backdrop" id="clearModal" style="z-index:2000">
+        <div class="modal-box" style="max-width:440px;text-align:center">
+            <i class="fas fa-eraser" style="font-size:1.8rem;color:var(--red);margin-bottom:12px;display:block"></i>
+            <div class="modal-title" style="font-size:1.2rem;margin-bottom:8px">Cancella misure</div>
+            <p style="color:var(--text-2);font-size:0.84rem;line-height:1.6;margin-bottom:18px" id="clearText"></p>
+            <div style="display:flex;flex-direction:column;gap:8px">
+                <button class="btn btn-primary" style="justify-content:center" id="clearAngles"><i class="fas fa-drafting-compass"></i> Solo misure angolari</button>
+                <button class="btn btn-ghost" style="justify-content:center" id="clearAll"><i class="fas fa-eraser"></i> Misure, linee guida e cerchi</button>
+                <button class="btn btn-ghost" style="justify-content:center" onclick="closeClearMeasures()">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MODAL SOGLIE VALUTAZIONE AUTOMATICA ══ -->
+    <div class="modal-backdrop" id="thresholdsModal" style="z-index:2000">
+        <div class="modal-box" style="max-width:620px;max-height:90vh;overflow-y:auto">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+                <i class="fas fa-sliders-h" style="color:var(--neon);font-size:1.1rem"></i>
+                <div class="modal-title" style="font-size:1.2rem;margin-bottom:0;flex:1">Soglie valutazione automatica</div>
+                <button class="btn btn-ghost" style="padding:6px 10px" onclick="closeThresholds()" aria-label="Chiudi"><i class="fas fa-times"></i></button>
+            </div>
+            <p style="color:var(--text-3);font-size:0.78rem;line-height:1.6;margin-bottom:12px">Fino a «Ottimo» il punteggio è 1–3, fino a «Critico» 4–6, oltre 7–10. Sono valori indicativi predefiniti: adattali al tuo protocollo. Valgono su questo dispositivo.</p>
+            <table class="cmp-table" id="thresholdsTable"></table>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap">
+                <button class="btn btn-ghost" onclick="resetThresholds()">Ripristina predefinite</button>
+                <button class="btn btn-primary" onclick="saveThresholds()"><i class="fas fa-check"></i> Salva</button>
+            </div>
         </div>
     </div>
 
