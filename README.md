@@ -3,6 +3,7 @@
 App web per lo screening posturale visivo degli atleti: 4 foto (frontale, posteriore, laterali) con linee guida e cerchi, checklist per distretto, note, storico delle sessioni e report PDF.
 
 - **Misura angoli** (📐 su ogni foto): *Angolo* a 3 punti (es. ginocchio, gomito) o *Inclinazione* a 2 punti rispetto all'orizzontale/verticale (es. spalle, bacino). Tocca il valore per dare un nome alla misura.
+- **Rilevamento automatico dei punti** (📐 → *Rileva punti*): il modello MediaPipe Pose, eseguito sul dispositivo, propone spalle, bacino, testa, ginocchia e anca e crea le misure. Le misure automatiche hanno il bordo tratteggiato e nel PDF sono indicate come «Automatica»; trascinando un punto diventano «Automatica, corretta» e non vengono più sovrascritte. Il modello stima i centri articolari, non i reperi palpatori: i valori vanno sempre verificati. Funziona aprendo l'app dal link o installata (non dal file su disco); dopo il primo utilizzo anche offline.
 - **Confronto sessioni**: foto *Prima/Dopo* affiancate o sovrapposte, variazioni della valutazione e degli angoli, PDF del confronto. Per confrontare un angolo tra due sessioni, dagli lo stesso nome in entrambe.
 
 > Screening visivo preliminare: non sostituisce la valutazione di uno specialista.
@@ -39,5 +40,5 @@ Esporta regolarmente un backup dal pulsante 🗄️ in alto (il backup si può r
 ## File
 
 - `postura.html` — l'app
-- `lib/` — librerie incluse localmente per l'uso offline (jsPDF, jsPDF-AutoTable, html2canvas, pdf.js, Font Awesome, Google Fonts)
+- `lib/` — librerie incluse localmente per l'uso offline (jsPDF, jsPDF-AutoTable, html2canvas, pdf.js, Font Awesome, Google Fonts, MediaPipe Tasks Vision 1.0.1 con il modello Pose Landmarker «full» — Apache 2.0)
 - `sw.js`, `manifest.webmanifest`, `icons/` — installazione come app e funzionamento offline

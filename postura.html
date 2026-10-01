@@ -736,8 +736,9 @@
         #toast {
             position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
             background: var(--bg-2); border: 1px solid var(--border-h);
-            border-radius: 50px; padding: 12px 24px;
+            border-radius: 18px; padding: 12px 22px;
             font-size: 0.85rem; font-weight: 600;
+            max-width: min(92vw, 640px); line-height: 1.4;
             z-index: 9000;
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: flex; align-items: center; gap: 10px;
@@ -782,6 +783,8 @@
         @media (pointer: coarse) { .angle-pt { width: 26px; height: 26px; margin: -13px 0 0 -13px; } }
         .angle-label { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 1px; background: rgba(7,9,15,0.8); color: #ffd600; font: 700 0.6rem/1.2 var(--font-mono); padding: 1px 1px 1px 5px; border-radius: 5px; border: 1px solid rgba(255,214,0,0.4); pointer-events: all; white-space: nowrap; z-index: 1; }
         .angle-label span { cursor: text; }
+        .angle-label.auto { border-style: dashed; border-color: rgba(255,214,0,0.75); }
+        .angle-menu hr { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
         .angle-del { background: none; border: none; color: #ff6b81; cursor: pointer; font-size: 0.55rem; padding: 0 4px; line-height: 1; }
         @media (pointer: coarse) { .angle-del { font-size: 0.7rem; padding: 2px 6px; } }
         .angle-menu { position: absolute; right: 8px; top: 100%; z-index: 60; background: var(--bg-1); border: 1px solid var(--border-h); border-radius: 10px; padding: 6px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 8px 30px rgba(0,0,0,.4); text-transform: none; letter-spacing: 0; }
@@ -1427,7 +1430,7 @@
         // TOAST
         // =========================================
         let toastTimer;
-        function showToast(msg, type = 'success') {
+        function showToast(msg, type = 'success', duration = 2800) {
             const t = document.getElementById('toast');
             const tx = document.getElementById('toastText');
             const ic = t.querySelector('i');
@@ -1435,7 +1438,7 @@
             tx.textContent = msg;
             t.className = `show ${type}`;
             clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+            toastTimer = setTimeout(() => t.classList.remove('show'), duration);
         }
 
         // =========================================
@@ -1860,7 +1863,7 @@
                     if (l.type === 'angle') {
                         const kind = l.kind === 'tilt' ? 'tilt' : '3p';
                         if (!Array.isArray(l.pts) || l.pts.length !== (kind === 'tilt' ? 4 : 6)) return null;
-                        return { type: 'angle', kind, pts: l.pts.map(n => Math.max(0, Math.min(1, +n || 0))), name: str(l.name) };
+                        return { type: 'angle', kind, pts: l.pts.map(n => Math.max(0, Math.min(1, +n || 0))), name: str(l.name), auto: ['mp', 'mp-edit'].includes(l.auto) ? l.auto : '' };
                     }
                     return { type: l.type === 'v' ? 'v' : 'h', pct: +l.pct || 50 };
                 }).filter(Boolean);
@@ -2267,7 +2270,7 @@
             document.getElementById('lines_'+view).innerHTML = '';
             (lines||[]).forEach(l => {
                 if (l.type === 'circle') _createCircle(view, l.cx, l.cy, l.size);
-                else if (l.type === 'angle') _createAngle(view, l.kind, l.pts, l.name);
+                else if (l.type === 'angle') _createAngle(view, l.kind, l.pts, l.name, l.auto);
                 else _createLine(view, l.type, l.pct);
             });
             refreshAngles(view);
@@ -2637,7 +2640,9 @@
             ctx.restore();
         }
 
-        const angleData = el => ({ type: 'angle', kind: el.dataset.kind, pts: JSON.parse(el.dataset.pts), name: el.dataset.name || '' });
+        // auto: '' = messa a mano, 'mp' = proposta dal rilevamento automatico, 'mp-edit' = proposta e poi corretta
+        const angleData = el => ({ type: 'angle', kind: el.dataset.kind, pts: JSON.parse(el.dataset.pts), name: el.dataset.name || '', auto: el.dataset.auto || '' });
+        const ORIGIN_LABEL = { mp: 'Automatica', 'mp-edit': 'Automatica, corretta', '': 'Manuale' };
 
         // Conversione coordinate foto ↔ pixel dell'overlay, tenendo conto di object-fit:contain e dello zoom
         function angleFrame(view) {
@@ -2677,6 +2682,8 @@
                 });
                 const lab = el.querySelector('.angle-label');
                 lab.querySelector('span').textContent = (a.name ? a.name + ' ' : '') + angleValue(a.kind, a.pts, f.natW, f.natH).text;
+                lab.classList.toggle('auto', a.auto === 'mp');
+                lab.title = a.auto === 'mp' ? 'Proposta dal rilevamento automatico: controlla i punti' : a.auto === 'mp-edit' ? 'Proposta automatica corretta a mano' : '';
                 allPx.push(px);
                 items.push({ lab, w: lab.offsetWidth, h: lab.offsetHeight, candidates: angleLabelCandidates(a.kind, px, 1) });
             });
@@ -2687,7 +2694,7 @@
         }
         function refreshAllAngles() { POSTURE_VIEWS.forEach(refreshAngles); }
 
-        function _createAngle(view, kind, pts, name) {
+        function _createAngle(view, kind, pts, name, auto) {
             const ov = document.getElementById('lines_' + view);
             const el = document.createElement('div');
             el.className = 'posture-angle';
@@ -2695,6 +2702,7 @@
             el.dataset.kind = kind;
             el.dataset.pts  = JSON.stringify(pts.map(n => +(+n).toFixed(5)));
             if (name) el.dataset.name = name;
+            if (auto) el.dataset.auto = auto;
 
             const n = pts.length / 2;
             const names = kind === 'tilt' ? ['Punto A', 'Punto B'] : ['Punto A', 'Vertice', 'Punto C'];
@@ -2704,7 +2712,7 @@
                 h.title = names[i] + ' — trascina per spostare';
                 h.addEventListener('pointerdown', e => {
                     e.preventDefault(); e.stopPropagation();
-                    h.setPointerCapture?.(e.pointerId);
+                    try { h.setPointerCapture(e.pointerId); } catch {}
                     h.classList.add('dragging');
                     const move = ev => {
                         const f = angleFrame(view); if (!f) return;
@@ -2714,6 +2722,7 @@
                         p[i * 2] = +Math.max(0, Math.min(1, u)).toFixed(5);
                         p[i * 2 + 1] = +Math.max(0, Math.min(1, v)).toFixed(5);
                         el.dataset.pts = JSON.stringify(p);
+                        if (el.dataset.auto === 'mp') el.dataset.auto = 'mp-edit';
                         refreshAngles(view);
                     };
                     const up = () => {
@@ -2773,8 +2782,15 @@
             menu.setAttribute('role', 'menu');
             menu.innerHTML = `
                 <button role="menuitem" data-k="3p"><i class="fas fa-drafting-compass"></i><span>Angolo<br><small>3 punti: es. ginocchio, gomito</small></span></button>
-                <button role="menuitem" data-k="tilt"><i class="fas fa-ruler-horizontal"></i><span>Inclinazione<br><small>2 punti: es. spalle, bacino</small></span></button>`;
-            menu.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { closeAngleMenu(); addPostureAngle(view, b.dataset.k); }));
+                <button role="menuitem" data-k="tilt"><i class="fas fa-ruler-horizontal"></i><span>Inclinazione<br><small>2 punti: es. spalle, bacino</small></span></button>
+                <hr>
+                <button role="menuitem" data-auto="one"><i class="fas fa-magic"></i><span>Rileva punti automaticamente<br><small>su questa foto, da controllare</small></span></button>
+                <button role="menuitem" data-auto="all"><i class="fas fa-magic"></i><span>Rileva su tutte le foto</span></button>`;
+            menu.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+                closeAngleMenu();
+                if (b.dataset.auto) runAutoDetect(b.dataset.auto === 'all' ? POSTURE_VIEWS : [view]);
+                else addPostureAngle(view, b.dataset.k);
+            }));
             btn.closest('.posture-card-title').appendChild(menu);
             menu.querySelector('button').focus();
             setTimeout(() => document.addEventListener('pointerdown', _angleMenuOutside, true), 0);
@@ -2795,11 +2811,118 @@
                 const count = { '3p': 0, tilt: 0 };
                 angles.forEach(a => {
                     count[a.kind]++;
-                    out.push({ view: v, kind: a.kind, name: a.name || `${angleKindLabel(a.kind)} ${count[a.kind]}`,
+                    out.push({ view: v, kind: a.kind, name: a.name || `${angleKindLabel(a.kind)} ${count[a.kind]}`, auto: a.auto || '',
                                ...angleValue(a.kind, a.pts, img.naturalWidth, img.naturalHeight) });
                 });
             }
             return out;
+        }
+
+        // =========================================
+        // RILEVAMENTO AUTOMATICO DEI PUNTI (MediaPipe Pose, sul dispositivo)
+        // =========================================
+        // Il modello gira nel browser: le foto non lasciano il dispositivo. Stima i CENTRI ARTICOLARI,
+        // non i reperi palpatori, quindi le misure proposte vanno sempre controllate e corrette.
+        // Indici dei 33 punti BlazePose; "L"/"R" = sinistra/destra dell'atleta.
+        const LM = { nose: 0, earL: 7, earR: 8, shL: 11, shR: 12, hipL: 23, hipR: 24, kneeL: 25, kneeR: 26, ankL: 27, ankR: 28 };
+        const LM_MIN_VISIBILITY = 0.5;
+        const AUTO_NAMES = ['Testa', 'Spalle', 'Bacino', 'Ginocchio DX', 'Ginocchio SX', 'Testa-spalla', 'Anca', 'Ginocchio'];
+        let _poseLandmarker = null;
+
+        async function getPoseLandmarker() {
+            if (_poseLandmarker) return _poseLandmarker;
+            // Aprendo il file da disco il browser blocca il caricamento del modello
+            if (location.protocol === 'file:') throw Object.assign(new Error('Apri l\'app dal link'), { code: 'file' });
+            const { PoseLandmarker } = await import('./lib/mediapipe/vision_bundle.mjs');
+            const fileset = { wasmLoaderPath: 'lib/mediapipe/wasm/vision_wasm_internal.js', wasmBinaryPath: 'lib/mediapipe/wasm/vision_wasm_internal.wasm' };
+            const opts = delegate => ({ baseOptions: { modelAssetPath: 'lib/mediapipe/pose_landmarker_full.task', delegate }, runningMode: 'IMAGE', numPoses: 1 });
+            try { _poseLandmarker = await PoseLandmarker.createFromOptions(fileset, opts('GPU')); }
+            catch (e) { console.warn('Rilevamento su GPU non disponibile, uso la CPU:', e); _poseLandmarker = await PoseLandmarker.createFromOptions(fileset, opts('CPU')); }
+            return _poseLandmarker;
+        }
+
+        // Misure proposte dai punti rilevati (coordinate 0–1 della foto, come gli angoli)
+        function poseMeasures(view, lm) {
+            const vis = i => lm[i]?.visibility ?? 0;
+            const ok = ids => ids.every(i => vis(i) >= LM_MIN_VISIBILITY);
+            const P = i => [Math.max(0, Math.min(1, lm[i].x)), Math.max(0, Math.min(1, lm[i].y))];
+            const out = [], missing = [];
+            const add = (name, kind, ids, pts) => ok(ids) ? out.push({ name, kind, pts: pts.flat() }) : missing.push(name);
+
+            if (view === 'front' || view === 'back') {
+                add('Testa',  'tilt', [LM.earL, LM.earR], [P(LM.earR), P(LM.earL)]);
+                add('Spalle', 'tilt', [LM.shL, LM.shR],   [P(LM.shR), P(LM.shL)]);
+                add('Bacino', 'tilt', [LM.hipL, LM.hipR], [P(LM.hipR), P(LM.hipL)]);
+                add('Ginocchio DX', '3p', [LM.hipR, LM.kneeR, LM.ankR], [P(LM.hipR), P(LM.kneeR), P(LM.ankR)]);
+                add('Ginocchio SX', '3p', [LM.hipL, LM.kneeL, LM.ankL], [P(LM.hipL), P(LM.kneeL), P(LM.ankL)]);
+            } else {
+                // Laterale: lato rivolto alla camera (quello rilevato meglio)
+                const R = { ear: LM.earR, sh: LM.shR, hip: LM.hipR, knee: LM.kneeR, ank: LM.ankR };
+                const L = { ear: LM.earL, sh: LM.shL, hip: LM.hipL, knee: LM.kneeL, ank: LM.ankL };
+                const score = s => Object.values(s).reduce((t, i) => t + vis(i), 0);
+                const s = score(R) >= score(L) ? R : L;
+                // Testa-spalla: angolo tra l'orizzontale (verso il viso) e la retta spalla→orecchio,
+                // approssimazione dell'angolo cranio-vertebrale (manca C7)
+                const sh = P(s.sh), dir = Math.sign(lm[LM.nose].x - lm[s.ear].x) || 1;
+                add('Testa-spalla', '3p', [s.ear, s.sh], [[Math.max(0, Math.min(1, sh[0] + dir * 0.08)), sh[1]], sh, P(s.ear)]);
+                add('Anca',      '3p', [s.sh, s.hip, s.knee],  [P(s.sh), P(s.hip), P(s.knee)]);
+                add('Ginocchio', '3p', [s.hip, s.knee, s.ank], [P(s.hip), P(s.knee), P(s.ank)]);
+            }
+            return { out, missing };
+        }
+
+        // Sostituisce solo le proposte automatiche non toccate; le misure manuali o corrette restano
+        async function autoDetectView(view) {
+            const img = document.getElementById('photo_' + view);
+            const lm = (await getPoseLandmarker()).detect(img).landmarks?.[0];
+            if (!lm) return { view, none: true, added: 0, kept: 0, missing: [] };
+            const { out, missing } = poseMeasures(view, lm);
+            const ov = document.getElementById('lines_' + view);
+            const existing = [...ov.querySelectorAll('.posture-angle')];
+            let added = 0, kept = 0;
+            out.forEach(m => {
+                const same = existing.filter(el => el.dataset.name === m.name);
+                if (same.some(el => el.dataset.auto !== 'mp')) { kept++; return; }
+                same.forEach(el => el.remove());
+                _createAngle(view, m.kind, m.pts, m.name, 'mp');
+                added++;
+            });
+            refreshAngles(view);
+            return { view, none: false, added, kept, missing };
+        }
+
+        async function runAutoDetect(views) {
+            const todo = views.filter(v => angleFrame(v));
+            if (!todo.length) { showToast('Carica prima una foto', 'error'); return; }
+            showLoading(_poseLandmarker ? 'Rilevamento punti...' : 'Caricamento modello (solo la prima volta)...');
+            try {
+                await getPoseLandmarker();
+                const res = [];
+                for (const v of todo) {
+                    showLoading(`Rilevamento punti — ${VIEW_LABELS[v]}...`);
+                    await new Promise(r => setTimeout(r, 30));   // lascia aggiornare il messaggio
+                    res.push(await autoDetectView(v));
+                }
+                hideLoading();
+                const added = res.reduce((t, r) => t + r.added, 0);
+                const none = res.filter(r => r.none).map(r => VIEW_LABELS[r.view]);
+                const missing = res.flatMap(r => r.missing.map(n => `${n} (${VIEW_LABELS[r.view]})`));
+                const kept = res.reduce((t, r) => t + r.kept, 0);
+                const parts = [];
+                parts.push(added ? `${added} ${added === 1 ? 'misura proposta' : 'misure proposte'}: controlla i punti` : 'Nessuna misura proposta');
+                if (none.length) parts.push(`nessuna persona riconosciuta in: ${none.join(', ')}`);
+                if (missing.length) parts.push(`punti incerti: ${missing.join(', ')}`);
+                if (kept) parts.push(kept === 1 ? '1 misura corretta a mano lasciata invariata' : `${kept} misure corrette a mano lasciate invariate`);
+                showToast(parts.join(' · '), added ? 'success' : 'error', added && !none.length && !missing.length ? 2800 : 7000);
+            } catch (e) {
+                hideLoading();
+                console.error(e);
+                if (e.code === 'file') {
+                    alert('Il rilevamento automatico non funziona aprendo il file postura.html dal disco: il browser blocca il caricamento del modello.\n\nApri l\'app dal link (o dall\'icona installata sulla Home): funziona anche offline dopo il primo utilizzo.');
+                } else {
+                    showToast('Rilevamento non riuscito: ' + e.message, 'error');
+                }
+            }
         }
 
         // =========================================
@@ -2822,7 +2945,7 @@
             root.addEventListener('change', scheduleAutoSave);
             const mo = new MutationObserver(scheduleAutoSave);
             POSTURE_VIEWS.forEach(v => {
-                mo.observe(document.getElementById('lines_' + v), { childList: true, subtree: true, attributes: true, attributeFilter: ['data-pct', 'data-cx', 'data-cy', 'data-size', 'data-pts', 'data-name'] });
+                mo.observe(document.getElementById('lines_' + v), { childList: true, subtree: true, attributes: true, attributeFilter: ['data-pct', 'data-cx', 'data-cy', 'data-size', 'data-pts', 'data-name', 'data-auto'] });
                 mo.observe(document.getElementById('photo_' + v), { attributes: true, attributeFilter: ['src'] });
             });
         }
@@ -3181,12 +3304,18 @@
                     doc.autoTable({
                         startY: y,
                         margin: { left: 14, right: 14 },
-                        head: [['Misure angolari', 'Vista', 'Tipo', 'Valore']],
-                        body: misure.map(m => [m.name, VIEW_LABELS[m.view], m.kind === 'tilt' ? `Inclinazione rispetto alla ${m.ref}` : 'Angolo articolare', `${m.deg.toFixed(1)}°`]),
+                        head: [['Misure angolari', 'Vista', 'Tipo', 'Origine', 'Valore']],
+                        body: misure.map(m => [m.name, VIEW_LABELS[m.view], m.kind === 'tilt' ? `Inclinazione rispetto alla ${m.ref}` : 'Angolo articolare', ORIGIN_LABEL[m.auto], `${m.deg.toFixed(1)}°`]),
                         ...PDF.tableStyle([26,46,74]),
-                        columnStyles: { 3: { halign: 'right', fontStyle: 'bold' } },
+                        columnStyles: { 4: { halign: 'right', fontStyle: 'bold' } },
                     });
                     y = doc.lastAutoTable.finalY + 6;
+                    if (misure.some(m => m.auto)) {
+                        doc.setFontSize(6.5); doc.setTextColor(...PDF.text3); doc.setFont('helvetica', 'italic');
+                        const nota = doc.splitTextToSize('Misure «Automatica»: punti proposti da un modello di stima della posa (MediaPipe Pose) che individua i centri articolari, non i reperi anatomici palpatori. Valori indicativi, da verificare.', 182);
+                        doc.text(nota, 14, y - 2);
+                        y += nota.length * 3 + 2;
+                    }
                 }
             }
 
